@@ -12,11 +12,12 @@ def normalize_text(
 
     Pipeline order:
     1. Remove newlines and carriage returns
-    2. Normalize apostrophe variants to standard ASCII apostrophe (')
-    3. Normalize/remove annotation markers (optional)
-    4. Clean excessive whitespace
-    5. Fix spacing around punctuation
-    6. Normalize capitalization
+    2. Clean bullet points and list markers (e.g. •, -, 1.)
+    3. Normalize apostrophe variants to standard ASCII apostrophe (')
+    4. Normalize/remove annotation markers (optional)
+    5. Clean excessive whitespace
+    6. Fix spacing around punctuation
+    7. Normalize capitalization
 
     Args:
         text: Raw transcribed text to normalize
@@ -35,6 +36,7 @@ def normalize_text(
         "Qalampir uz sayti"
     """
     text = remove_new_lines(text)
+    text = clean_list_markers(text)
     text = normalize_uzbek_apostrophes(text)
 
     if remove_annotations:
@@ -58,6 +60,22 @@ def clean_whitespaces(text: str) -> str:
 
 def remove_new_lines(text: str) -> str:
     return text.replace('\n', ' ').replace('\r', ' ')
+
+
+def clean_list_markers(text: str) -> str:
+    # Remove bullet points and list markers from the start
+    bullet_pattern_start = r'^[•—\-*>→⋅◦▪▫‣]\s*'
+    text = re.sub(bullet_pattern_start, '', text)
+
+    # Remove numbered list markers at the start (e.g., 1., 2), 1-, 1:)
+    numbered_pattern_start = r'^\d+[\.\):]\s*'
+    text = re.sub(numbered_pattern_start, '', text)
+
+    # Remove bullet points in the middle of text
+    mid_bullet_pattern = r'[•→⋅◦▪▫‣]'
+    text = re.sub(mid_bullet_pattern, ' ', text).rstrip()
+
+    return text
 
 
 def normalize_uzbek_apostrophes(text: str) -> str:
