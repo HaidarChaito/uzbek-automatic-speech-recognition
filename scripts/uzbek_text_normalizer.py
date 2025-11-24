@@ -1,8 +1,8 @@
 def normalize_text(
-        text: str,
-        normalize_domains: bool = True,
-        remove_annotations: bool = True,
-        lowercase_annotations: bool = True
+    text: str,
+    normalize_domains: bool = True,
+    remove_annotations: bool = True,
+    lowercase_annotations: bool = True,
 ) -> str:
     """
     Normalize Uzbek transcribed text for ASR training.
@@ -55,25 +55,25 @@ import re
 def clean_whitespaces(text: str) -> str:
     text = text.strip()
     # Remove multiple spaces
-    return re.sub(r'\s+', ' ', text)
+    return re.sub(r"\s+", " ", text)
 
 
 def remove_new_lines(text: str) -> str:
-    return text.replace('\n', ' ').replace('\r', ' ')
+    return text.replace("\n", " ").replace("\r", " ")
 
 
 def clean_list_markers(text: str) -> str:
     # Remove bullet points and list markers from the start
-    bullet_pattern_start = r'^[•—\-*>→⋅◦▪▫‣]\s*'
-    text = re.sub(bullet_pattern_start, '', text)
+    bullet_pattern_start = r"^[•—\-*>→⋅◦▪▫‣]\s*"
+    text = re.sub(bullet_pattern_start, "", text)
 
     # Remove numbered list markers at the start (e.g., 1., 2), 1-, 1:)
-    numbered_pattern_start = r'^\d+[\.\):]\s*'
-    text = re.sub(numbered_pattern_start, '', text)
+    numbered_pattern_start = r"^\d+[\.\):]\s*"
+    text = re.sub(numbered_pattern_start, "", text)
 
     # Remove bullet points in the middle of text
-    mid_bullet_pattern = r'[•→⋅◦▪▫‣]'
-    text = re.sub(mid_bullet_pattern, ' ', text).rstrip()
+    mid_bullet_pattern = r"[•→⋅◦▪▫‣]"
+    text = re.sub(mid_bullet_pattern, " ", text).rstrip()
 
     return text
 
@@ -99,10 +99,10 @@ def normalize_uzbek_apostrophes(text: str) -> str:
 
 def normalize_annotations(text: str, lowercase=True) -> str:
     """Normalize annotations [text], (text), *text* to [text]"""
-    text = re.sub(r'\*\s*\[\s*([^]]+?)\s*]\s*\*', r'[\1]', text)  # *[text]* -> [text]
-    text = re.sub(r'\\\s*\[\s*([^]]+?)\s*]', r'[\1]', text)  # \[text] -> [text]
-    text = re.sub(r'\(\s*([^)]+?)\s*\)', r'[\1]', text)  # (text) -> [text]
-    text = re.sub(r'\[\s*([^]]+?)\s*]', r'[\1]', text)  # [ text ] -> [text]
+    text = re.sub(r"\*\s*\[\s*([^]]+?)\s*]\s*\*", r"[\1]", text)  # *[text]* -> [text]
+    text = re.sub(r"\\\s*\[\s*([^]]+?)\s*]", r"[\1]", text)  # \[text] -> [text]
+    text = re.sub(r"\(\s*([^)]+?)\s*\)", r"[\1]", text)  # (text) -> [text]
+    text = re.sub(r"\[\s*([^]]+?)\s*]", r"[\1]", text)  # [ text ] -> [text]
 
     if lowercase:
         text = text.lower()
@@ -110,8 +110,10 @@ def normalize_annotations(text: str, lowercase=True) -> str:
 
 
 def normalize_spacing_around_punc(text: str) -> str:
-    text = re.sub(r'\s+([.,!?;:])', r'\1', text)  # Remove space before punctuation
-    return re.sub(r'([.,!?;:])([A-Za-z])', r'\1 \2', text)  # Add space after punctuation
+    text = re.sub(r"\s+([.,!?;:])", r"\1", text)  # Remove space before punctuation
+    return re.sub(
+        r"([.,!?;:])([A-Za-z])", r"\1 \2", text
+    )  # Add space after punctuation
 
 
 def capitalize_first_character(text: str) -> str:
@@ -124,12 +126,19 @@ def capitalize_first_character(text: str) -> str:
 
 def capitalize_after_punc(text: str) -> str:
     """Fix capitalization after sentence-ending punctuation"""
-    return re.sub(r'([.!?])\s+([a-z])', lambda m: m.group(1) + ' ' + m.group(2).upper(), text)
+    return re.sub(
+        r"([.!?])\s+([a-z])", lambda m: m.group(1) + " " + m.group(2).upper(), text
+    )
 
 
 def capitalize_uz_domain(text: str) -> str:
     """Normalize Uzbek website/domain names. Capitalize first letter of domain names (Qalampir uz)"""
-    return re.sub(r'\b([A-Za-z]+)\.uz\b', lambda m: m.group(1).capitalize() + ' uz', text, flags=re.IGNORECASE)
+    return re.sub(
+        r"\b([A-Za-z]+)\.uz\b",
+        lambda m: m.group(1).capitalize() + " uz",
+        text,
+        flags=re.IGNORECASE,
+    )
 
 
 def normalize_capitalization(text: str, normalize_domains=True) -> str:

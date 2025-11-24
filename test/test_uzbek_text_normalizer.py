@@ -77,8 +77,10 @@ class TestNormalizeUzbekApostrophes(unittest.TestCase):
         self.assertEqual(normalize_uzbek_apostrophes("oˋzbek"), "o'zbek")
 
     def test_multiple_apostrophes(self):
-        self.assertEqual(normalize_uzbek_apostrophes("o‘zbek maʼrifatini ta’minlashda"),
-                         "o'zbek ma'rifatini ta'minlashda")
+        self.assertEqual(
+            normalize_uzbek_apostrophes("o‘zbek maʼrifatini ta’minlashda"),
+            "o'zbek ma'rifatini ta'minlashda",
+        )
 
     def test_mixed_apostrophe_variants(self):
         self.assertEqual(normalize_uzbek_apostrophes("o'zbek tilʼi"), "o'zbek til'i")
@@ -89,31 +91,50 @@ class TestNormalizeUzbekApostrophes(unittest.TestCase):
 
 class TestNormalizeAnnotations(unittest.TestCase):
     def test_parentheses_to_brackets(self):
-        self.assertEqual(normalize_annotations("hello (noise) world"), "hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("hello (noise) world"), "hello [noise] world"
+        )
 
     def test_asterisk_brackets_to_brackets(self):
-        self.assertEqual(normalize_annotations("hello *[music]* world"), "hello [music] world")
+        self.assertEqual(
+            normalize_annotations("hello *[music]* world"), "hello [music] world"
+        )
 
     def test_backslash_brackets_to_brackets(self):
-        self.assertEqual(normalize_annotations("hello \\[laughter] world"), "hello [laughter] world")
+        self.assertEqual(
+            normalize_annotations("hello \\[laughter] world"), "hello [laughter] world"
+        )
 
     def test_normalizes_spacing_in_brackets(self):
-        self.assertEqual(normalize_annotations("hello [ noise ] world"), "hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("hello [ noise ] world"), "hello [noise] world"
+        )
 
     def test_normalizes_asterisk_and_spacing_in_brackets(self):
-        self.assertEqual(normalize_annotations("hello *[ noise ]* world"), "hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("hello *[ noise ]* world"), "hello [noise] world"
+        )
 
     def test_normalizes_asterisk_and_backslash_brackets(self):
-        self.assertEqual(normalize_annotations("hello *\\[noise]* world"), "hello *[noise]* world")
+        self.assertEqual(
+            normalize_annotations("hello *\\[noise]* world"), "hello *[noise]* world"
+        )
 
     def test_lowercases_annotation_content(self):
-        self.assertEqual(normalize_annotations("hello (NOISE) world"), "hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("hello (NOISE) world"), "hello [noise] world"
+        )
 
     def test_lowercases_annotation_content2(self):
-        self.assertEqual(normalize_annotations("hello [ Noise ] world"), "hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("hello [ Noise ] world"), "hello [noise] world"
+        )
 
     def test_multiple_annotations(self):
-        self.assertEqual(normalize_annotations("(music) hello *[noise]* world"), "[music] hello [noise] world")
+        self.assertEqual(
+            normalize_annotations("(music) hello *[noise]* world"),
+            "[music] hello [noise] world",
+        )
 
     def test_no_annotations(self):
         self.assertEqual(normalize_annotations("hello world"), "hello world")
@@ -147,7 +168,9 @@ class TestNormalizeSpacingAroundPunc(unittest.TestCase):
         self.assertEqual(normalize_spacing_around_punc("hello , world"), "hello, world")
 
     def test_removes_space_before_multiple_punctuation(self):
-        self.assertEqual(normalize_spacing_around_punc("hello ! world ?"), "hello! world?")
+        self.assertEqual(
+            normalize_spacing_around_punc("hello ! world ?"), "hello! world?"
+        )
 
     def test_adds_space_after_period(self):
         self.assertEqual(normalize_spacing_around_punc("hello.world"), "hello. world")
@@ -156,10 +179,14 @@ class TestNormalizeSpacingAroundPunc(unittest.TestCase):
         self.assertEqual(normalize_spacing_around_punc("hello,world"), "hello, world")
 
     def test_handles_correct_spacing(self):
-        self.assertEqual(normalize_spacing_around_punc("hello, world."), "hello, world.")
+        self.assertEqual(
+            normalize_spacing_around_punc("hello, world."), "hello, world."
+        )
 
     def test_multiple_punctuation_fixes(self):
-        self.assertEqual(normalize_spacing_around_punc("hello ,world .test"), "hello, world. test")
+        self.assertEqual(
+            normalize_spacing_around_punc("hello ,world .test"), "hello, world. test"
+        )
 
     def test_no_punctuation(self):
         self.assertEqual(normalize_spacing_around_punc("hello world"), "hello world")
@@ -245,7 +272,9 @@ class TestIntegration(unittest.TestCase):
     """Integration tests combining multiple functions"""
 
     def test_full_normalization_pipeline(self):
-        text = "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n(noise)  "
+        text = (
+            "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n(noise)  "
+        )
 
         # Step by step
         text = remove_new_lines(text)
@@ -256,7 +285,9 @@ class TestIntegration(unittest.TestCase):
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
 
-        self.assertEqual(text, "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman [noise]")
+        self.assertEqual(
+            text, "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman [noise]"
+        )
 
     def test_uzbek_text_with_various_apostrophes(self):
         text = "o'zbek tilʼi va oʻzbekiston"
