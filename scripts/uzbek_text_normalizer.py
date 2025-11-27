@@ -39,7 +39,7 @@ def normalize_text(
     text = remove_new_lines(text)
     text = remove_list_markers(text)
     text = normalize_uzbek_apostrophes(text)
-    text = remove_quotes_and_colons(text)
+    text = remove_special_chars(text)
 
     if remove_annotations:
         text = normalize_annotations(text, lowercase_annotation=lowercase_annotations)
@@ -99,12 +99,19 @@ def normalize_uzbek_apostrophes(text: str) -> str:
     return text
 
 
-def remove_quotes_and_colons(text: str) -> str:
-    """Remove quote marks and colons: ", “, ”, «, », :"""
+def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
+    """
+    Remove special characters that don't affect ASR: quotes, colons, and optionally ellipsis.
+    Use remove_ellipsis True for read/book speech, False for conversational speech.
+    """
     chars_to_remove = ['"', "“", "”", "«", "»", ":"]
 
     for char in chars_to_remove:
         text = text.replace(char, "")
+
+    if remove_ellipsis:
+        text = text.replace("…", "")  # Single ellipsis character
+        text = re.sub(r"\.{2,}", "", text)  # Remove 2 or more consecutive dots
 
     return text
 

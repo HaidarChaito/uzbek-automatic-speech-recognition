@@ -11,7 +11,7 @@ from scripts.uzbek_text_normalizer import (
     capitalize_after_punc,
     capitalize_uz_domain,
     normalize_capitalization,
-    remove_quotes_and_colons,
+    remove_special_chars,
 )
 
 
@@ -105,36 +105,36 @@ class TestNormalizeUzbekApostrophes(unittest.TestCase):
         self.assertEqual(normalize_uzbek_apostrophes("salom"), "salom")
 
 
-class TestRemoveQuotesAndColons(unittest.TestCase):
+class TestRemoveSpecialChars(unittest.TestCase):
     def test_double_quotation_mark1(self):
         self.assertEqual(
-            remove_quotes_and_colons('Uning oldida "tirbandlik" paydo bo\'ldi'),
+            remove_special_chars('Uning oldida "tirbandlik" paydo bo\'ldi'),
             "Uning oldida tirbandlik paydo bo'ldi",
         )
 
     def test_double_quotation_mark2(self):
         self.assertEqual(
-            remove_quotes_and_colons("“Ahmoq!” o'yladim men. Kechikdi!"),
+            remove_special_chars("“Ahmoq!” o'yladim men. Kechikdi!"),
             "Ahmoq! o'yladim men. Kechikdi!",
         )
         self.assertEqual(
-            remove_quotes_and_colons("U kelmadi. “Ahmoq! o'yladim men. Kechikdi!"),
+            remove_special_chars("U kelmadi. “Ahmoq! o'yladim men. Kechikdi!"),
             "U kelmadi. Ahmoq! o'yladim men. Kechikdi!",
         )
 
     def test_double_quotation_mark3(self):
         self.assertEqual(
-            remove_quotes_and_colons("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
+            remove_special_chars("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
             "Hovlini to'ldirib mevali daraxt ekdik, dedi.",
         )
         self.assertEqual(
-            remove_quotes_and_colons("Ular bunday sharoitda ma'nan «so'nib» qolishadi"),
+            remove_special_chars("Ular bunday sharoitda ma'nan «so'nib» qolishadi"),
             "Ular bunday sharoitda ma'nan so'nib qolishadi",
         )
 
     def test_no_apostrophes(self):
         self.assertEqual(
-            remove_quotes_and_colons(
+            remove_special_chars(
                 "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
             ),
             "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
@@ -142,13 +142,84 @@ class TestRemoveQuotesAndColons(unittest.TestCase):
 
     def test_remove_colons(self):
         self.assertEqual(
-            remove_quotes_and_colons("Kitob haqida ma'lumot:"), "Kitob haqida ma'lumot"
+            remove_special_chars("Kitob haqida ma'lumot:"), "Kitob haqida ma'lumot"
         )
         self.assertEqual(
-            remove_quotes_and_colons(
+            remove_special_chars(
                 "Birdan Stalin: «Lavrentiy, chora ko'r», deb qolardi.:"
             ),
             "Birdan Stalin Lavrentiy, chora ko'r, deb qolardi.",
+        )
+
+    def test_remove_2dots(self):
+        self.assertEqual(
+            remove_special_chars(
+                "Unda, sen chinovniklarni..! Chinovniklar to'nka!", remove_ellipsis=True
+            ),
+            "Unda, sen chinovniklarni! Chinovniklar to'nka!",
+        )
+        self.assertEqual(
+            remove_special_chars("O'qimaysizmi?..", remove_ellipsis=True),
+            "O'qimaysizmi?",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Voy esim qursin.. Bug'doy nima bo'ldi...", remove_ellipsis=True
+            ),
+            "Voy esim qursin Bug'doy nima bo'ldi",
+        )
+
+    def test_remove_ellipses(self):
+        self.assertEqual(
+            remove_special_chars(
+                "O'lsam, mozorimni kungayda qazing…", remove_ellipsis=True
+            ),
+            "O'lsam, mozorimni kungayda qazing",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Yo'q, qoldi… u qoldi men bilan qoldi…", remove_ellipsis=True
+            ),
+            "Yo'q, qoldi u qoldi men bilan qoldi",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Bundan tashqari... Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar",
+                remove_ellipsis=True,
+            ),
+            "Bundan tashqari Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Ro'moli burchini ushlab, televizorga...", remove_ellipsis=True
+            ),
+            "Ro'moli burchini ushlab, televizorga",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Kel... Deb xotirjamlik bilan gapirish kerak....", remove_ellipsis=True
+            ),
+            "Kel Deb xotirjamlik bilan gapirish kerak",
+        )
+
+    def test_not_remove_ellipses(self):
+        self.assertEqual(
+            remove_special_chars(
+                "O'lsam, mozorimni kungayda qazing…", remove_ellipsis=False
+            ),
+            "O'lsam, mozorimni kungayda qazing…",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Yo'q, qoldi… u qoldi men bilan qoldi…", remove_ellipsis=False
+            ),
+            "Yo'q, qoldi… u qoldi men bilan qoldi…",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Kel.. Deb xotirjamlik bilan gapirish kerak....", remove_ellipsis=False
+            ),
+            "Kel.. Deb xotirjamlik bilan gapirish kerak....",
         )
 
 
@@ -353,13 +424,13 @@ class TestIntegration(unittest.TestCase):
     """Integration tests combining multiple functions"""
 
     def test_full_normalization_pipeline(self):
-        text = "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n(noise)  \nErk – manzilmas, erk – yo‘ldir"
+        text = "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n... (noise)  \nErk – manzilmas, erk – yo‘ldir"
 
         # Step by step
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
-        text = remove_quotes_and_colons(text)
+        text = remove_special_chars(text)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
@@ -367,17 +438,17 @@ class TestIntegration(unittest.TestCase):
 
         self.assertEqual(
             text,
-            "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman [noise] Erk manzilmas, erk yo'ldir",
+            "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman... [noise] Erk manzilmas, erk yo'ldir",
         )
 
     def test_capitalization_pipeline(self):
-        text = "– Tur, Mansur ketamiz! vaqt ketgani qoldi. odam bo'lmas ekan bu."
+        text = "– Tur, Mansur ketamiz! vaqt ketgani qoldi. odam bo'lmas ekan bu..."
 
         # Step by step
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
-        text = remove_quotes_and_colons(text)
+        text = remove_special_chars(text, remove_ellipsis=True)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
@@ -385,7 +456,7 @@ class TestIntegration(unittest.TestCase):
 
         self.assertEqual(
             text,
-            "Tur, Mansur ketamiz! Vaqt ketgani qoldi. Odam bo'lmas ekan bu.",
+            "Tur, Mansur ketamiz! Vaqt ketgani qoldi. Odam bo'lmas ekan bu",
         )
 
     def test_uzbek_text_with_various_apostrophes(self):
