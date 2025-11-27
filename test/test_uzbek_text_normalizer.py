@@ -1,8 +1,8 @@
 import unittest
 
 from scripts.uzbek_text_normalizer import (
-    clean_whitespaces,
-    clean_list_markers,
+    remove_whitespaces,
+    remove_list_markers,
     remove_new_lines,
     normalize_uzbek_apostrophes,
     normalize_annotations,
@@ -33,22 +33,37 @@ class TestRemoveNewLines(unittest.TestCase):
 
 class TestListMarkers(unittest.TestCase):
     def test_remove_starting_bullet_point(self):
-        self.assertEqual(clean_list_markers("• hello world"), "hello world")
+        self.assertEqual(remove_list_markers("• hello world"), "hello world")
 
     def test_remove_starting_bullet_point_without_space(self):
-        self.assertEqual(clean_list_markers("•hello world"), "hello world")
+        self.assertEqual(remove_list_markers("•hello world"), "hello world")
 
     def test_remove_multiple_bullet_points(self):
-        self.assertEqual(clean_list_markers("◦ hello\n  • world ▫"), "hello\n    world")
+        self.assertEqual(
+            remove_list_markers("◦ hello\n  • world ▫"), "hello\n    world"
+        )
+
+    # Common in books
+    def test_remove_multiple_middle_bullet_points(self):
+        self.assertEqual(
+            remove_list_markers("Non dema! — dedi. — nonni otini atama!"),
+            "Non dema!   dedi.   nonni otini atama!",
+        )
+        self.assertEqual(
+            remove_list_markers("Erk – manzilmas, erk – yo‘ldir"),
+            "Erk   manzilmas, erk   yo‘ldir",
+        )
 
     def test_remove_starting_numbered_list(self):
-        self.assertEqual(clean_list_markers("1. hello world"), "hello world")
+        self.assertEqual(remove_list_markers("1. hello world"), "hello world")
 
     def test_remove_starting_numbered_list_without_space(self):
-        self.assertEqual(clean_list_markers("2) hello world"), "hello world")
+        self.assertEqual(remove_list_markers("2) hello world"), "hello world")
 
     def test_handle_multiple_numbered_lists(self):
-        self.assertEqual(clean_list_markers("1)2) hello 1. world"), "2) hello 1. world")
+        self.assertEqual(
+            remove_list_markers("1)2) hello 1. world"), "2) hello 1. world"
+        )
 
 
 class TestNormalizeUzbekApostrophes(unittest.TestCase):
@@ -122,12 +137,20 @@ class TestNormalizeAnnotations(unittest.TestCase):
 
     def test_lowercases_annotation_content(self):
         self.assertEqual(
-            normalize_annotations("hello (NOISE) world"), "hello [noise] world"
+            normalize_annotations("hello (NOISE) World"), "hello [noise] World"
+        )
+        self.assertEqual(
+            normalize_annotations("Hello [ Noise ] world"), "Hello [noise] world"
         )
 
-    def test_lowercases_annotation_content2(self):
+    def test_preserves_annotation_content_casing(self):
         self.assertEqual(
-            normalize_annotations("hello [ Noise ] world"), "hello [noise] world"
+            normalize_annotations("hello (NOISE) World", lowercase_annotation=False),
+            "hello [NOISE] World",
+        )
+        self.assertEqual(
+            normalize_annotations("Hello [ Noise ] world", lowercase_annotation=False),
+            "Hello [Noise] world",
         )
 
     def test_multiple_annotations(self):
@@ -138,26 +161,30 @@ class TestNormalizeAnnotations(unittest.TestCase):
 
     def test_no_annotations(self):
         self.assertEqual(normalize_annotations("hello world"), "hello world")
+        self.assertEqual(
+            normalize_annotations("Tur, Mansur ketamiz. vaqt ketgani qoldi."),
+            "Tur, Mansur ketamiz. vaqt ketgani qoldi.",
+        )
 
 
 class TestCleanWhitespaces(unittest.TestCase):
     def test_removes_leading_whitespace(self):
-        self.assertEqual(clean_whitespaces("  hello"), "hello")
+        self.assertEqual(remove_whitespaces("  hello"), "hello")
 
     def test_removes_trailing_whitespace(self):
-        self.assertEqual(clean_whitespaces("hello  "), "hello")
+        self.assertEqual(remove_whitespaces("hello  "), "hello")
 
     def test_removes_multiple_spaces(self):
-        self.assertEqual(clean_whitespaces("hello    world"), "hello world")
+        self.assertEqual(remove_whitespaces("hello    world"), "hello world")
 
     def test_handles_tabs_and_spaces(self):
-        self.assertEqual(clean_whitespaces("hello\t\tworld"), "hello world")
+        self.assertEqual(remove_whitespaces("hello\t\tworld"), "hello world")
 
     def test_empty_string(self):
-        self.assertEqual(clean_whitespaces(""), "")
+        self.assertEqual(remove_whitespaces(""), "")
 
     def test_only_whitespace(self):
-        self.assertEqual(clean_whitespaces("   \t  "), "")
+        self.assertEqual(remove_whitespaces("   \t  "), "")
 
 
 class TestNormalizeSpacingAroundPunc(unittest.TestCase):
@@ -267,26 +294,48 @@ class TestNormalizeCapitalization(unittest.TestCase):
         result = normalize_capitalization("", normalize_domains=False)
         self.assertEqual(result, "")
 
+    def test_capitalization_after_comma_should_not_change(self):
+        result = normalize_capitalization(
+            "– Tur, Mansur ketamiz.", normalize_domains=True
+        )
+        self.assertEqual(result, "– Tur, Mansur ketamiz.")
+
 
 class TestIntegration(unittest.TestCase):
     """Integration tests combining multiple functions"""
 
     def test_full_normalization_pipeline(self):
-        text = (
-            "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n(noise)  "
-        )
+        text = "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n(noise)  \nErk – manzilmas, erk – yo‘ldir"
 
         # Step by step
         text = remove_new_lines(text)
-        text = clean_list_markers(text)
+        text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
-        text = clean_whitespaces(text)
+        text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
 
         self.assertEqual(
-            text, "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman [noise]"
+            text,
+            "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman [noise] Erk manzilmas, erk yo'ldir",
+        )
+
+    def test_capitalization_pipeline(self):
+        text = "– Tur, Mansur ketamiz! vaqt ketgani qoldi. odam bo'lmas ekan bu."
+
+        # Step by step
+        text = remove_new_lines(text)
+        text = remove_list_markers(text)
+        text = normalize_uzbek_apostrophes(text)
+        text = normalize_annotations(text)
+        text = remove_whitespaces(text)
+        text = normalize_spacing_around_punc(text)
+        text = normalize_capitalization(text)
+
+        self.assertEqual(
+            text,
+            "Tur, Mansur ketamiz! Vaqt ketgani qoldi. Odam bo'lmas ekan bu.",
         )
 
     def test_uzbek_text_with_various_apostrophes(self):
@@ -297,7 +346,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_messy_transcription(self):
         text = "   salom  ,  dunyo   !   qalaysan   ?  "
-        text = clean_whitespaces(text)
+        text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
         text = capitalize_first_character(text)
 
