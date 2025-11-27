@@ -14,10 +14,11 @@ def normalize_text(
     1. Remove newlines and carriage returns
     2. Clean bullet points and list markers (e.g. •, -, 1.)
     3. Normalize apostrophe variants to standard ASCII apostrophe (')
-    4. Normalize/remove annotation markers (optional)
-    5. Clean excessive whitespace
-    6. Fix spacing around punctuation
-    7. Normalize capitalization
+    4. Remove quotes (", “, ”, «, ») and_colons (:)
+    5. Normalize/remove annotation markers (optional)
+    6. Clean excessive whitespace
+    7. Fix spacing around punctuation
+    8. Normalize capitalization
 
     Args:
         text: Raw transcribed text to normalize
@@ -38,6 +39,7 @@ def normalize_text(
     text = remove_new_lines(text)
     text = remove_list_markers(text)
     text = normalize_uzbek_apostrophes(text)
+    text = remove_quotes_and_colons(text)
 
     if remove_annotations:
         text = normalize_annotations(text, lowercase_annotation=lowercase_annotations)
@@ -93,6 +95,16 @@ def normalize_uzbek_apostrophes(text: str) -> str:
 
     for variant in apostrophe_variants:
         text = text.replace(variant, "'")
+
+    return text
+
+
+def remove_quotes_and_colons(text: str) -> str:
+    """Remove quote marks and colons: ", “, ”, «, », :"""
+    chars_to_remove = ['"', "“", "”", "«", "»", ":"]
+
+    for char in chars_to_remove:
+        text = text.replace(char, "")
 
     return text
 

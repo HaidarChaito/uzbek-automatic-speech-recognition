@@ -11,6 +11,7 @@ from scripts.uzbek_text_normalizer import (
     capitalize_after_punc,
     capitalize_uz_domain,
     normalize_capitalization,
+    remove_quotes_and_colons,
 )
 
 
@@ -102,6 +103,53 @@ class TestNormalizeUzbekApostrophes(unittest.TestCase):
 
     def test_no_apostrophes(self):
         self.assertEqual(normalize_uzbek_apostrophes("salom"), "salom")
+
+
+class TestRemoveQuotesAndColons(unittest.TestCase):
+    def test_double_quotation_mark1(self):
+        self.assertEqual(
+            remove_quotes_and_colons('Uning oldida "tirbandlik" paydo bo\'ldi'),
+            "Uning oldida tirbandlik paydo bo'ldi",
+        )
+
+    def test_double_quotation_mark2(self):
+        self.assertEqual(
+            remove_quotes_and_colons("“Ahmoq!” o'yladim men. Kechikdi!"),
+            "Ahmoq! o'yladim men. Kechikdi!",
+        )
+        self.assertEqual(
+            remove_quotes_and_colons("U kelmadi. “Ahmoq! o'yladim men. Kechikdi!"),
+            "U kelmadi. Ahmoq! o'yladim men. Kechikdi!",
+        )
+
+    def test_double_quotation_mark3(self):
+        self.assertEqual(
+            remove_quotes_and_colons("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
+            "Hovlini to'ldirib mevali daraxt ekdik, dedi.",
+        )
+        self.assertEqual(
+            remove_quotes_and_colons("Ular bunday sharoitda ma'nan «so'nib» qolishadi"),
+            "Ular bunday sharoitda ma'nan so'nib qolishadi",
+        )
+
+    def test_no_apostrophes(self):
+        self.assertEqual(
+            remove_quotes_and_colons(
+                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
+            ),
+            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
+        )
+
+    def test_remove_colons(self):
+        self.assertEqual(
+            remove_quotes_and_colons("Kitob haqida ma'lumot:"), "Kitob haqida ma'lumot"
+        )
+        self.assertEqual(
+            remove_quotes_and_colons(
+                "Birdan Stalin: «Lavrentiy, chora ko'r», deb qolardi.:"
+            ),
+            "Birdan Stalin Lavrentiy, chora ko'r, deb qolardi.",
+        )
 
 
 class TestNormalizeAnnotations(unittest.TestCase):
@@ -311,6 +359,7 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
+        text = remove_quotes_and_colons(text)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
@@ -328,6 +377,7 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
+        text = remove_quotes_and_colons(text)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
