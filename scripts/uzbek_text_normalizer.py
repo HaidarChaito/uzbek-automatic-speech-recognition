@@ -14,7 +14,7 @@ def normalize_text(
     1. Remove newlines and carriage returns
     2. Clean bullet points and list markers (e.g. •, -, 1.)
     3. Normalize apostrophe variants to standard ASCII apostrophe (')
-    4. Remove quotes (", “, ”, «, ») and_colons (:)
+    4. Remove special chars: quotes (", “, ”, «, ...), colons (:), ellipses (...)
     5. Normalize/remove annotation markers (optional)
     6. Clean excessive whitespace
     7. Fix spacing around punctuation
@@ -104,7 +104,7 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
     Remove special characters that don't affect ASR: quotes, colons, and optionally ellipsis.
     Use remove_ellipsis True for read/book speech, False for conversational speech.
     """
-    chars_to_remove = ['"', "“", "”", "«", "»", ":"]
+    chars_to_remove = ['"', "“", "”", "„", "‟", "«", "»", ":"]
 
     for char in chars_to_remove:
         text = text.replace(char, "")

@@ -1,0 +1,235 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+
+def plot_distribution_graphs(df: pd.DataFrame, duration_key="duration"):
+    """Plots audio duration and transcription word count distributions.
+
+    Expected audio duration key is "duration" - duration in seconds
+    """
+    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    total_duration = df[duration_key].sum()
+    total_duration_label = (
+        f"Total: {total_duration / 3600:,.0f}h"
+        if total_duration / 3600 >= 1
+        else f"Total: {total_duration / 60:,.0f}min"
+    )
+
+    axes[0].hist(df[duration_key], bins=30, edgecolor="black")
+    axes[0].axvline(
+        df[duration_key].mean(),
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Mean: {df[duration_key].mean():.1f}s",
+    )
+    axes[0].axvline(
+        5,
+        color="blue",
+        linestyle="",
+        linewidth=2,
+        label=total_duration_label,
+    )
+    axes[0].set_xlabel("Duration (seconds)")
+    axes[0].set_ylabel("Count")
+    axes[0].set_title("Audio Duration Distribution")
+    axes[0].grid(
+        True,
+        axis="y",
+        alpha=0.3,
+        linewidth=0.7,
+    )
+    axes[0].legend()
+
+    axes[1].hist(df["word_count"], bins=30, edgecolor="black", color="orange")
+    axes[1].axvline(
+        df["word_count"].mean(),
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f'Mean: {df["word_count"].mean():.1f}',
+    )
+    axes[1].axvline(
+        5,
+        color="blue",
+        linestyle="",
+        linewidth=2,
+        label=f'Total: {df["word_count"].sum():,.0f}',
+    )
+    axes[1].set_xlabel("Word Count")
+    axes[1].set_ylabel("Count")
+    axes[1].set_title("Transcription Word Count Distribution")
+    axes[1].grid(
+        True,
+        axis="y",
+        alpha=0.3,
+        linewidth=0.7,
+    )
+    axes[1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
+    # Copy and reclassify genders
+    df = all_data_df[["type", "gender", "duration"]].copy()
+    df["gender"] = df["gender"].where(
+        df["gender"].isin(["female_feminine", "male_masculine"]), "not_specified"
+    )
+
+    # Group by type and gender, sum durations
+    grouped = (
+        df.groupby(["type", "gender"], dropna=False)["duration"]
+        .sum()
+        .unstack(fill_value=0)
+    )
+
+    # Convert duration to hours
+    grouped = (grouped / 3600).round(decimals=1)
+
+    # Sort types by total duration
+    grouped["total_duration"] = grouped.sum(axis=1)
+    grouped = grouped.sort_values("total_duration")
+
+    # Compute absolute total and validated duration
+    absolute_total = grouped["total_duration"].sum(axis=0)
+    absolute_total_label = f"Total duration: {absolute_total:,.1f} h"
+
+    validated_duration = grouped["total_duration"].loc[["train", "test", "dev"]].sum()
+    validated_duration_label = f"Total validated duration: {validated_duration:,.1f} h"
+    grouped = grouped.drop(columns="total_duration")
+
+    # Compute total duration per gender for legend
+    total_per_gender = grouped.sum(axis=0)
+
+    # Plot stacked bar chart
+    types = grouped.index.tolist()
+    genders = grouped.columns.tolist()
+    x = np.arange(len(types))
+
+    fig, ax = plt.subplots(layout="constrained")
+
+    bottom = np.zeros(len(types))  # starting bottom for stacking
+
+    colors = {
+        "female_feminine": "#FF69B4",
+        "male_masculine": "#1E90FF",
+        "not_specified": "#A9A9A9",
+    }
+
+    min_height = 10  # min hours to show labels
+
+    for gender in genders:
+        values = grouped[gender].values
+        gender_label = f"{gender} (total: {total_per_gender[gender]:.1f} h)"
+        rects = ax.bar(
+            x, values, bottom=bottom, label=gender_label, color=colors.get(gender)
+        )
+        bottom += values  # update bottom for next stack
+        for rect, val in zip(rects, values):
+            if val >= min_height:
+                ax.text(
+                    rect.get_x() + rect.get_width() / 2,
+                    rect.get_y() + rect.get_height() / 2,
+                    f"{val:.1f}",
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                )
+
+    ax.set_ylabel("Duration (hours)")
+    ax.set_title("Total Duration by Dataset Type and Gender")
+    ax.set_xticks(x)
+    ax.set_xticklabels(types, rotation=45, ha="right")
+    ax.axvline(
+        4,
+        linestyle="",
+        label=absolute_total_label,
+    )
+    ax.axvline(
+        4,
+        linestyle="",
+        label=validated_duration_label,
+    )
+    ax.grid(
+        True,
+        axis="y",
+        alpha=0.3,
+        linewidth=0.7,
+    )
+    ax.legend()
+
+    plt.show()
+
+
+def plot_demographic_statistics(df: pd.DataFrame):
+    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    # Count recordings per speaker
+    speaker_counts = df["client_id"].value_counts()
+
+    bins = [0, 10, 50, 200, float("inf")]
+    labels = ["1-10", "11-50", "51-200", "200+"]
+    speakers_grouped = (
+        pd.cut(speaker_counts, bins=bins, labels=labels).value_counts().sort_index()
+    )
+
+    speakers_grouped.plot(kind="barh", ax=axes[0])
+    axes[0].axvline(
+        5,
+        linestyle="",
+        linewidth=2,
+        label=f"Total speakers: {len(speaker_counts):,.0f}",
+    )
+    axes[0].set_xlabel("Number of speakers")
+    axes[0].set_ylabel("Number of recordings")
+    axes[0].set_title("Recordings Per Speaker")
+    axes[0].grid(
+        True,
+        axis="x",
+        alpha=0.3,
+        linewidth=0.7,
+    )
+    axes[0].legend()
+
+    # Pie chart
+    age_grouped = df["age"].value_counts().sort_index()
+
+    # Combine very small slices (<1.2%) into "Other"
+    total = age_grouped.sum()
+    mask = (age_grouped / total) < 0.012
+    if mask.any():
+        other_sum = age_grouped[mask].sum()
+        age_grouped = age_grouped[~mask]
+        age_grouped["Other"] = other_sum
+
+    colors = [
+        (0, 0, 1, 0.7),
+        (0, 1, 0, 0.7),
+        (0.24, 0.79, 0.79, 0.7),
+        (0.6, 0.6, 0.6, 0.7),
+        (1, 0, 0, 0.7),
+        (1, 1, 0, 0.7),
+        (1, 0, 1, 0.7),
+    ]
+
+    # Function to show labels only for ≥1%
+    def autopct_func(pct):
+        return f"{pct:.1f}%" if pct >= 1 else ""
+
+    age_grouped.plot(
+        kind="pie",
+        ax=axes[1],
+        autopct=autopct_func,
+        startangle=90,
+        counterclock=False,
+        ylabel="",
+        colors=colors,
+    )
+    axes[1].set_title("Age Distribution of Speakers")
+
+    plt.tight_layout()
+    plt.show()
