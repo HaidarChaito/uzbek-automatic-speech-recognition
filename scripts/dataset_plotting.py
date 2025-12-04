@@ -12,7 +12,7 @@ def plot_distribution_graphs(df: pd.DataFrame, duration_key="duration"):
 
     total_duration = df[duration_key].sum()
     total_duration_label = (
-        f"Total: {total_duration / 3600:,.0f}h"
+        f"Total: {total_duration / 3600:,.1f}h"
         if total_duration / 3600 >= 1
         else f"Total: {total_duration / 60:,.0f}min"
     )
@@ -165,6 +165,37 @@ def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
     plt.show()
 
 
+def plot_gender_pie_chart(df: pd.DataFrame):
+    df["gender"] = df["gender"].where(
+        df["gender"].isin(["female_feminine", "male_masculine"]), "not_specified"
+    )
+
+    grouped = df.groupby(["gender"], dropna=False)["duration"].sum()
+    # Convert duration to hours
+    grouped = (grouped / 3600).round(decimals=3)
+
+    colors = [
+        "#FF69B4",
+        "#1E90FF",
+        "#A9A9A9",
+    ]
+
+    def func(pct, total_duration):
+        duration = pct / 100 * total_duration
+        return f"{pct:.1f}%\n({duration:.2f} h)"
+
+    grouped.plot(
+        kind="pie",
+        ylabel="",
+        autopct=lambda pct: func(pct, grouped.sum()),
+        colors=colors,
+        startangle=90,
+        counterclock=False,
+    )
+    plt.title("Gender Proportion")
+    plt.show()
+
+
 def plot_demographic_statistics(df: pd.DataFrame):
     _, axes = plt.subplots(1, 2, figsize=(10, 5))
 
@@ -232,4 +263,44 @@ def plot_demographic_statistics(df: pd.DataFrame):
     axes[1].set_title("Age Distribution of Speakers")
 
     plt.tight_layout()
+    plt.show()
+
+
+def plot_speaker_trust_score_distribution(df: pd.DataFrame, data_frame_title=""):
+    trust_scores = df["speaker_trust_score"]
+
+    plt.figure(figsize=(8, 5))
+    plt.hist(trust_scores, bins=40, density=True)
+
+    plt.axvline(
+        trust_scores.mean(),
+        linestyle="--",
+        color="red",
+        label=f"Mean: {trust_scores.mean():.2f}",
+    )
+    plt.axvline(
+        0.8,
+        linestyle="",
+        label=f"Std: {trust_scores.std():.2f}",
+    )
+    plt.axvline(
+        0.8,
+        linestyle="",
+        label=f"Max: {trust_scores.max():.2f}",
+    )
+    plt.axvline(
+        0.8,
+        linestyle="",
+        label=f"Speakers: {len(df['client_id'].unique()):,}",
+    )
+
+    plt_title = "Distribution of Speaker Trust Score"
+    if len(data_frame_title.strip()) > 0:
+        plt_title = f"{plt_title} in {data_frame_title.title()}"
+    plt.title(plt_title)
+
+    plt.xlabel("Speaker Trust Score")
+    plt.ylabel("Density")
+    plt.grid(True)
+    plt.legend()
     plt.show()
