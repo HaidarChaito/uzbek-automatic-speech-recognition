@@ -88,7 +88,7 @@ def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
     )
 
     # Convert duration to hours
-    grouped = (grouped / 3600).round(decimals=1)
+    grouped = grouped / 3600
 
     # Sort types by total duration
     grouped["total_duration"] = grouped.sum(axis=1)
@@ -172,7 +172,7 @@ def plot_gender_pie_chart(df: pd.DataFrame):
 
     grouped = df.groupby(["gender"], dropna=False)["duration"].sum()
     # Convert duration to hours
-    grouped = (grouped / 3600).round(decimals=3)
+    grouped = grouped / 3600
 
     colors = [
         "#FF69B4",
