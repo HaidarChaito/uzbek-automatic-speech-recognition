@@ -12,6 +12,7 @@ from scripts.uzbek_text_normalizer import (
     capitalize_uz_domain,
     normalize_capitalization,
     remove_special_chars,
+    remove_punctuations,
 )
 
 
@@ -223,10 +224,114 @@ class TestRemoveSpecialChars(unittest.TestCase):
         )
 
 
+class TestRemovePunctuations(unittest.TestCase):
+    def test_question_mark(self):
+        self.assertEqual(
+            remove_punctuations('Uning oldida "tirbandlik" paydo bo\'ldimi?'),
+            'Uning oldida "tirbandlik" paydo bo\'ldimi',
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Esing joyidami?"),
+            "Nimalar deyapsan Esing joyidami",
+        )
+        self.assertEqual(
+            remove_punctuations('"Musulmonman", deb namoz o\'qimaysanmi?!'),
+            '"Musulmonman" deb namoz o\'qimaysanmi',
+        )
+
+    def test_exclamation_mark(self):
+        self.assertEqual(
+            remove_punctuations("“Ahmoq!” o'yladim men. Kechikdi!"),
+            "“Ahmoq” o'yladim men Kechikdi",
+        )
+        self.assertEqual(
+            remove_punctuations("To'xta! Ketma!!!"),
+            "To'xta Ketma",
+        )
+
+    def test_comma(self):
+        self.assertEqual(
+            remove_punctuations("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
+            "«Hovlini to'ldirib mevali daraxt ekdik dedi",
+        )
+        self.assertEqual(
+            remove_punctuations("O'g'lim, ovqatingni yemaysanmi?"),
+            "O'g'lim ovqatingni yemaysanmi",
+        )
+
+    def test_full_stop(self):
+        self.assertEqual(
+            remove_punctuations("Bir nechta. nuqtali gap. tekshiruv."),
+            "Bir nechta nuqtali gap tekshiruv",
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam, menga baqrayib turar edi."),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+
+    def test_semi_colon(self):
+        self.assertEqual(
+            remove_punctuations("Bir nechta. nuqtali gap; tekshiruv."),
+            "Bir nechta nuqtali gap tekshiruv",
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam; menga baqrayib turar edi."),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+
+    def test_no_punctuations(self):
+        self.assertEqual(
+            remove_punctuations(
+                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
+            ),
+            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
+        )
+        self.assertEqual(
+            remove_punctuations("O'g'lim ovqatingni yemaysanmi"),
+            "O'g'lim ovqatingni yemaysanmi",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                'Андижонда тандирлар "ҳавони ифлослантиряпти" деб топилди'
+            ),
+            'Андижонда тандирлар "ҳавони ифлослантиряпти" деб топилди',
+        )
+
+    def test_multiple_punctuations(self):
+        self.assertEqual(
+            remove_punctuations('"Ketma..." deya yalindi..'),
+            '"Ketma" deya yalindi',
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam,,, menga baqrayib turar edi!!!"),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Esing joyidami???"),
+            "Nimalar deyapsan Esing joyidami",
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Seni esing joyida emas?!?!"),
+            "Nimalar deyapsan Seni esing joyida emas",
+        )
+        self.assertEqual(
+            remove_punctuations('"Ketma.;" deya yalindi..'),
+            '"Ketma" deya yalindi',
+        )
+
+
 class TestNormalizeAnnotations(unittest.TestCase):
     def test_parentheses_to_brackets(self):
         self.assertEqual(
-            normalize_annotations("hello (noise) world"), "hello [noise] world"
+            normalize_annotations("hello (musiqa) world"), "hello [musiqa] world"
+        )
+
+    def test_parentheses_to_no_brackets(self):
+        self.assertEqual(
+            normalize_annotations("hello (whatever) world"), "hello (whatever) world"
+        )
+        self.assertEqual(
+            normalize_annotations("hello (NOISE) World"), "hello (NOISE) World"
         )
 
     def test_asterisk_brackets_to_brackets(self):
@@ -249,6 +354,24 @@ class TestNormalizeAnnotations(unittest.TestCase):
             normalize_annotations("hello *[ noise ]* world"), "hello [noise] world"
         )
 
+    def test_normalizes_spacing_in_brackets_multiple_words(self):
+        self.assertEqual(
+            normalize_annotations("hello (noise detected) world"),
+            "hello (noise detected) world",
+        )
+        self.assertEqual(
+            normalize_annotations("hello [noise detected] world"),
+            "hello [noise detected] world",
+        )
+        self.assertEqual(
+            normalize_annotations("hello *[noise detected]* world"),
+            "hello *[noise detected]* world",
+        )
+        self.assertEqual(
+            normalize_annotations("hello *[noise_detected]* world"),
+            "hello [noise_detected] world",
+        )
+
     def test_normalizes_asterisk_and_backslash_brackets(self):
         self.assertEqual(
             normalize_annotations("hello *\\[noise]* world"), "hello *[noise]* world"
@@ -256,16 +379,16 @@ class TestNormalizeAnnotations(unittest.TestCase):
 
     def test_lowercases_annotation_content(self):
         self.assertEqual(
-            normalize_annotations("hello (NOISE) World"), "hello [noise] World"
+            normalize_annotations("Hello [ Noise ] world"), "Hello [noise] world"
         )
         self.assertEqual(
-            normalize_annotations("Hello [ Noise ] world"), "Hello [noise] world"
+            normalize_annotations("Hello [ NOISE ] world"), "Hello [noise] world"
         )
 
     def test_preserves_annotation_content_casing(self):
         self.assertEqual(
             normalize_annotations("hello (NOISE) World", lowercase_annotation=False),
-            "hello [NOISE] World",
+            "hello (NOISE) World",
         )
         self.assertEqual(
             normalize_annotations("Hello [ Noise ] world", lowercase_annotation=False),
@@ -275,6 +398,10 @@ class TestNormalizeAnnotations(unittest.TestCase):
     def test_multiple_annotations(self):
         self.assertEqual(
             normalize_annotations("(music) hello *[noise]* world"),
+            "(music) hello [noise] world",
+        )
+        self.assertEqual(
+            normalize_annotations("[Music] hello *[noise]* world"),
             "[music] hello [noise] world",
         )
 
@@ -423,22 +550,49 @@ class TestNormalizeCapitalization(unittest.TestCase):
 class TestIntegration(unittest.TestCase):
     """Integration tests combining multiple functions"""
 
-    def test_full_normalization_pipeline(self):
-        text = "— Muttasil o‘qib, kamolga intilmoq zarur!  men   o'qiyman\n\n\n... (noise)  \nErk – manzilmas, erk – yo‘ldir"
+    def test_case_insensitive_asr_normalization_pipeline(self):
+        text = """
+        Rasmiy xabarda bu ishlar “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan. @Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. (random Noise) Shuning uchun ularning tandirini buzish kerak ekan.
+
+        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman #hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas’ullar bilan birga, shaxsan (oddiy qavs ichida gap) o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, [ Annotatsiya ] video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.
+        """
 
         # Step by step
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
-        text = remove_special_chars(text)
         text = normalize_annotations(text)
+        text = remove_special_chars(text)
+        text = remove_punctuations(text)
+        text = remove_whitespaces(text)
+        text = normalize_spacing_around_punc(text)
+        text = text.lower()
+
+        self.assertEqual(
+            text,
+            "rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan ya'ni andijonlik mulozimlarning fikricha somsapazlar havoni ifloslantirayotgan ekan (random noise) shuning uchun ularning tandirini buzish kerak ekan shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi hikmatullo dadaxonov ham aks etgan u buzish ishlariga boshqa mas'ullar bilan birga shaxsan (oddiy qavs ichida gap) o'zi bosh-qosh bo'lib turgan voqea katta shov-shuvni keltirib chiqargach [annotatsiya] video va rasmlar hokimlik kanalidan darhol o'chirildi viloyat hokimligi tezda bayonot bilan chiqib dadaxonovga hayfsan berilganini ma'lum qildi",
+        )
+
+    def test_case_sensitive_asr_normalization_pipeline(self):
+        text = """
+        Rasmiy xabarda bu ishlar: “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan.Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan.
+
+        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish ishlariga boshqa mas’ullar bilan birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.
+        """
+
+        # Step by step
+        text = remove_new_lines(text)
+        text = remove_list_markers(text)
+        text = normalize_uzbek_apostrophes(text)
+        text = normalize_annotations(text)
+        text = remove_special_chars(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
 
         self.assertEqual(
             text,
-            "Muttasil o'qib, kamolga intilmoq zarur! Men o'qiyman... [noise] Erk manzilmas, erk yo'ldir",
+            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
         )
 
     def test_capitalization_pipeline(self):
