@@ -1,3 +1,5 @@
+import math
+
 def normalize_text(
     text: str,
     should_remove_punctuations: bool = False,
@@ -44,6 +46,12 @@ def normalize_text(
         >>> normalize_text("QALAMPIR.UZ  sayti", normalize_domains=True)
         "Qalampir uz sayti"
     """
+    # Check for NaN or empty string safely
+    is_nan = isinstance(text, float) and math.isnan(text)
+    if text is None or is_nan or str(text).strip() == "":
+        return ""
+    text = str(text)
+
     text = remove_new_lines(text)
     text = remove_list_markers(text)
     text = normalize_uzbek_apostrophes(text)

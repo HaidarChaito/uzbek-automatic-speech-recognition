@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from scripts.uzbek_text_normalizer import (
@@ -13,6 +14,7 @@ from scripts.uzbek_text_normalizer import (
     normalize_capitalization,
     remove_special_chars,
     remove_punctuations,
+    normalize_text,
 )
 
 
@@ -626,6 +628,19 @@ class TestIntegration(unittest.TestCase):
         text = capitalize_first_character(text)
 
         self.assertEqual(text, "Salom, dunyo! qalaysan?")
+
+    def test_nan_or_empty_string(self):
+        text = " \t  "
+        text = normalize_text(text)
+        self.assertEqual(text, "")
+
+        text = None
+        text = normalize_text(text)
+        self.assertEqual(text, "")
+
+        text = math.nan
+        text = normalize_text(text)
+        self.assertEqual(text, "")
 
 
 if __name__ == "__main__":
