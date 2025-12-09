@@ -552,9 +552,9 @@ class TestIntegration(unittest.TestCase):
 
     def test_case_insensitive_asr_normalization_pipeline(self):
         text = """
-        Rasmiy xabarda bu ishlar “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan. @Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. (random Noise) Shuning uchun ularning tandirini buzish kerak ekan.
+        Rasmiy  xabarda bu ishlar “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan. @Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni > ifloslantirayotgan ekan. (random Noise) Shuning uchun ularning tandirini buzish kerak ekan.
 
-        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman #hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas’ullar bilan birga, shaxsan (oddiy qavs ichida gap) o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, [ Annotatsiya ] video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.
+        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman #hokimi Hikmatullo Dadaxonov ham aks etgan. ? u buzish ishlariga boshqa mas’ullar bilan birga, shaxsan (oddiy qavs ichida gap) o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, [ Annotatsiya ] video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
 
         # Step by step
@@ -575,9 +575,9 @@ class TestIntegration(unittest.TestCase):
 
     def test_case_sensitive_asr_normalization_pipeline(self):
         text = """
-        Rasmiy xabarda bu ishlar: “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan.Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan.
+        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan.
 
-        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish ishlariga boshqa mas’ullar bilan birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.
+        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish  ishlariga boshqa mas’ullar bilan < birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
 
         # Step by step
