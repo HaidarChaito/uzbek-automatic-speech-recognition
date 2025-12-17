@@ -1,13 +1,30 @@
 import math
 import re
 
-"""
-Number to Uzbek Words Converter
-Converts digits to Uzbek word form for ASR transcription alignment
-"""
-
 
 class NumberToUzbekWord:
+    """
+    Number to Uzbek Words Converter
+    Converts digits to Uzbek word form for ASR transcription alignment
+
+    Supports:
+        - Basic integers: 42 → "qirq ikki"
+        - Negative numbers: -15 → "minus o'n besh"
+        - Decimals: 3.14 → "uch butun o'n to'rt"
+        - Large numbers with separators: 1,234,567 → "bir million ikki yuz..."
+        - European format: 14 245,48 → "o'n to'rt ming..."
+        - Ranges: 5-10 → "besh - o'n"
+        - Ordinals: 2-qism → "ikkinchi qism"
+        - Currencies: $5.5, 100€, ₽50 → "besh butun besh dollar", "yuz yevro", "ellik rubl"
+        - Percentages: 60% → "oltmish foiz"
+        - Abbreviations: 17,3 mlrd → "17,3 milliard"
+        - Quantifiers: 5ta → "beshta"
+        - Case suffixes: $32,08 ga, 60% ni → oltmish foizni
+
+    Limitations:
+        - Doesn't appropriately support time, roman numerals, and phone numbers
+    """
+
     def __init__(self):
         # Basic numbers 0-9
         self.ones = {
@@ -72,7 +89,7 @@ class NumberToUzbekWord:
             number_part = original
 
             # 1. Extract currency prefix if present
-            prefix_match = re.match(rf"^({currency_symbols_regex}) *", original)
+            prefix_match = re.match(rf"^({currency_symbols_regex}) ?", original)
             if prefix_match:
                 currency_symbol = prefix_match.group(1)
                 additional_suffix = " " + self.currencies[currency_symbol]
@@ -158,14 +175,14 @@ class NumberToUzbekWord:
 
         # Pattern that matches all number types (order matters - more specific patterns first)
         pattern = (
-            rf"(?:{currency_symbols_regex} *)?"  # optional currency prefix: $, €, £, ₽
+            rf"(?:{currency_symbols_regex} ?)?"  # optional currency prefix: $, €, £, ₽
             + r"-?\d+"  # required main number (can be negative): 10, -156
             + r"(?:(?:,\d{3})+| (?:\d{3} )+\d{3})?"  # optional thousand separators (all commas OR all spaces): ,000,000 |  000 000
-            + r"(?:[,\s]\d{3})*"  # optional thousand separators (comma or space):
+            + r"(?:[, ]\d{3})*"  # optional thousand separators (comma or space):
             + r"(?:[.,]\d+)?"  # optional decimal part: .1415 | ,1415
             + r"(?:-\d+(?:[, ]\d{3})*(?:[.,]\d+)?)?"  # optional range with second number (can be formatted or decimal nuber): -10,000 | -3.14 [full e.g. 8,000-10,000 | 1.14-3.14]
             + r"(?:-[a-zA-Z]+)?"  # optional ordinal suffix with word: -qism
-            + rf"(?: *%| *{currency_symbols_regex})?"  # optional percentage or currency suffix (with whitespace): % | $
+            + rf"(?: ?%| ?{currency_symbols_regex})?"  # optional percentage or currency suffix (with whitespace): % | $
         )
 
         # Preprocess to separate alphanumeric combinations
@@ -178,8 +195,10 @@ class NumberToUzbekWord:
         """
         Handle alphanumeric combinations and abbreviations:
             1. Expand abbreviated number words ONLY after numbers: "17,3 mlrd" → "17,3 milliard"
-            2. Merge numbers with "ta" quantifier: "5 ta" → "5ta"
-            3. Separate numbers from other letters: "Intel Core i10" → "Intel Core i 10"
+            2. Separate numbers from other letters: "Intel Core i10" → "Intel Core i 10"
+            3. Merge numbers with "ta" quantifier: "5 ta" → "5ta"
+            4. Merge complex numbers with percentage and Uzbek cases: "1,234.56% ga" → "1,234.56%ga"
+            5. Merge complex numbers with currency and Uzbek cases: "$32,08 ga" → "$32,08ga"
         """
         # Expand abbreviated large number words
         abbreviations = {
@@ -194,17 +213,9 @@ class NumberToUzbekWord:
             pattern = r"(\d+(?:[.,]\d+)?)\s*" + re.escape(abbr) + r"\.?"
             text = re.sub(pattern, rf"\1 {full}", text)
 
-        # Merge "number + space + ta" → "number+ta"
-        # "5 ta" → "5ta", "10 ta" → "10ta"
-        text = re.sub(r"\b(\d+)\s+(ta)\b", r"\1\2", text)
-
-        # Separate other alphanumeric combinations
+        # Separate ALL alphanumeric combinations
         def separate_match(match):
             full = match.group(0)
-
-            # Don't separate if it ends with "ta" (already handled above)
-            if full.lower().endswith("ta"):
-                return full
 
             # Letter(s) + number: X7 → X 7, i10 → i 10
             if re.match(r"^[A-Za-z]+\d+", full):
@@ -220,6 +231,38 @@ class NumberToUzbekWord:
 
         pattern = r"\b[A-Za-z]*\d+[A-Za-z]+\b|\b[A-Za-z]+\d+\b"
         text = re.sub(pattern, separate_match, text)
+
+        # ==== Merge Back Special Cases ====
+
+        # Merge "number + space + ta" → "number+ta"
+        # "5 ta" → "5ta", "10 ta" → "10ta"
+        text = re.sub(r"\b(\d+)\s+(ta)\b", r"\1\2", text)
+
+        # Define complex number pattern (same as the main regex structure)
+        currency_symbols_regex = "[" + "".join(self.currencies.keys()) + "]"
+        complex_number = (
+            r"-?\d+"  # main number
+            + r"(?:(?:,\d{3})+| (?:\d{3} )+\d{3})?"  # thousand separators
+            + r"(?:[, ]\d{3})*"  # additional separators
+            + r"(?:[.,]\d+)?"  # decimal part
+            + r"(?:-\d+(?:[, ]\d{3})*(?:[.,]\d+)?)?"  # range
+        )
+
+        uzbek_cases_regex = r"ning|ni|ga|ka|qa|da|dan|ini"
+
+        # Merge "complex_number% + space + cases" → "complex_number%cases"
+        # "1,234.56% ga" → "1,234.56%ga", "60% dan" → "60%dan"
+        text = re.sub(
+            rf"\b({complex_number}) ?% ?({uzbek_cases_regex})\b", r"\1%\2", text
+        )
+
+        # Merge "currency + number + space + cases" → "currency+number+cases"
+        # "$1,234.56 ga" → "$1,234.56ga", "1,234.56$ ni" → "1,234.56$ni"
+        text = re.sub(
+            rf"({currency_symbols_regex} ?{complex_number}|{complex_number} ?{currency_symbols_regex}) ?({uzbek_cases_regex})\b",
+            r"\1\2",
+            text,
+        )
 
         return text
 

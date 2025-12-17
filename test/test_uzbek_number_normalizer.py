@@ -178,8 +178,14 @@ class TestNumberToUzbekWord(unittest.TestCase):
             ),
             "2025-yil 1-dekabr holatiga ko‘ra 61,23 million dollarga yetdi.",
         )
+        self.assertEqual(
+            self.converter._preprocess_text(
+                "2025-yil 1-dekabr holatiga ko‘ra olti mln. dollarga yetdi."
+            ),
+            "2025-yil 1-dekabr holatiga ko‘ra olti mln. dollarga yetdi.",
+        )
 
-    def test_correct_preprocess_text_spacing(self):
+    def test_correct_preprocess_text_spacing_old(self):
         self.assertEqual(
             self.converter._preprocess_text("Men 5ta kitob oldim"),
             "Men 5ta kitob oldim",
@@ -205,6 +211,62 @@ class TestNumberToUzbekWord(unittest.TestCase):
                 "Yangi BMW X7 mashinasi taxminan 136,390 yevro turadi"
             ),
             "Yangi BMW X 7 mashinasi taxminan 136,390 yevro turadi",
+        )
+
+    def test_correct_preprocess_text_spacing_with_percentage(self):
+        self.assertEqual(
+            self.converter._preprocess_text("U 5%ga o'sdi"),
+            "U 5%ga o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 5 % ga o'sdi"),
+            "U 5%ga o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 5.5 % ga o'sdi"),
+            "U 5.5%ga o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 5,5 % ga o'sdi"),
+            "U 5,5%ga o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 50 500 % ga o'sdi"),
+            "U 50 500%ga o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 50-55 % dan o'sdi"),
+            "U 50-55%dan o'sdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 50.5-55.6 % ini tashkil qiladi"),
+            "U 50.5-55.6%ini tashkil qiladi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("U 5  % ga o'sdi"),
+            "U 5  % ga o'sdi",
+        )
+
+    def test_correct_preprocess_text_spacing_with_currencies(self):
+        self.assertEqual(
+            self.converter._preprocess_text("Tovar narxi $32,08ga oshdi"),
+            "Tovar narxi $32,08ga oshdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("Tovar narxi $ 32.08 ga oshdi"),
+            "Tovar narxi $ 32.08ga oshdi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("Tovar narxi 32,008€ ni tashkil qiladi"),
+            "Tovar narxi 32,008€ni tashkil qiladi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("Tovar narxi 32,08 € ni tashkil qiladi"),
+            "Tovar narxi 32,08 €ni tashkil qiladi",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text("Tovar narxi 30-35 € ni tashkil qiladi"),
+            "Tovar narxi 30-35 €ni tashkil qiladi",
         )
 
     # ===== Normalize Function Tests =====
@@ -263,6 +325,10 @@ class TestNumberToUzbekWord(unittest.TestCase):
         self.assertEqual(
             self.converter.normalize("10 500 050-15 005 000ta"),
             "o'n million besh yuz ming ellik - o'n besh million besh mingta",
+        )
+        self.assertEqual(
+            self.converter.normalize("10  500 050-15 005  000ta"),
+            "o'n  besh yuz ming ellik - o'n besh ming besh  nolta",
         )
         self.assertEqual(
             self.converter.normalize("Uning xisobi -10 000 - 15 000 so'm edi."),
@@ -394,7 +460,7 @@ class TestNumberToUzbekWord(unittest.TestCase):
             self.converter.normalize(
                 "₽  1 1,27 so‘mga oshib, 153,04 so‘mni tashkil etdi"
             ),
-            "bir rubl bir butun yigirma yetti so‘mga oshib, bir yuz ellik uch butun nol to'rt so‘mni tashkil etdi",
+            "₽  bir bir butun yigirma yetti so‘mga oshib, bir yuz ellik uch butun nol to'rt so‘mni tashkil etdi",
         )
 
     def test_normalize_currency_suffix(self):
@@ -412,7 +478,7 @@ class TestNumberToUzbekWord(unittest.TestCase):
             self.converter.normalize(
                 "1  ₽ 1,27 so‘mga oshib, 153,04 so‘mni tashkil etdi"
             ),
-            "bir rubl bir butun yigirma yetti so‘mga oshib, bir yuz ellik uch butun nol to'rt so‘mni tashkil etdi",
+            "bir  bir butun yigirma yetti rubl so‘mga oshib, bir yuz ellik uch butun nol to'rt so‘mni tashkil etdi",
         )
 
     def test_normalize_percentage_suffix(self):
@@ -424,7 +490,7 @@ class TestNumberToUzbekWord(unittest.TestCase):
             self.converter.normalize(
                 "soʻmning dollarga nisbatan kursi -3,4 % ga mustahkamlangandi"
             ),
-            "soʻmning dollarga nisbatan kursi minus uch butun to'rt foiz ga mustahkamlangandi",
+            "soʻmning dollarga nisbatan kursi minus uch butun to'rt foizga mustahkamlangandi",
         )
 
     def test_normalize_multiple_numbers(self):
@@ -435,6 +501,31 @@ class TestNumberToUzbekWord(unittest.TestCase):
         result = self.converter.normalize("1-bob: 2-3 kun, 1,000 so'm, 5.5 kg")
         self.assertEqual(
             result, "birinchi bob: ikki - uch kun, ming so'm, besh butun besh kg"
+        )
+
+    def test_normalize_mixed_patterns_extended(self):
+        result = self.converter.normalize(
+            """
+Raqamlarga koʻra, oʻtgan oyda mamlakatga jami qiymati 68,2 mln dollarlik 4 597 dona elektromobil import qilingan. Taqqoslash uchun, sentyabrda 11 534 ta elektromobil olib kelingan (qariyb 60% ga kamaygan).
+
+Respublikaga elektrda harakatlanuvchi avtomobillar importi 2025-yil iyuldan sezilarli oʻsa boshladi. Jumladan, iyunda chet eldan 4560 dona elektromobil olib kelingan boʻlsa, iyulda bu raqam 7,204 donani tashkil etgan.
+
+Noyabr oyida import qilingan elektromobillar har bir donasining oʻrtacha qiymati keskin oshganini koʻrish mumkin — 14.8 ming dollar. Mazkur qiymat oktyabrda 10.3 ming dollardan toʻgʻri kelgandi. Bundan bir yil ilgari — 2024-yil noyabrda esa har bir dona elektormobil narxi 6 100 $ dan tushgan.
+
+Yillik hisobda taqqoslansa, 2025-yil yanvar-noyabr oylarida Oʻzbekistonga umumiy qiymati 612,2 mln. dollarlik 51,856 dona elektromobil import qilingan. Yaʼni yillik import hajmi ikki baravardan yuqori oʻsgan.
+            """
+        )
+        self.assertEqual(
+            result,
+            """
+Raqamlarga koʻra, oʻtgan oyda mamlakatga jami qiymati oltmish sakkiz butun ikki million dollarlik to'rt ming besh yuz to'qson yetti dona elektromobil import qilingan. Taqqoslash uchun, sentyabrda o'n bir ming besh yuz o'ttiz to'rtta elektromobil olib kelingan (qariyb oltmish foizga kamaygan).
+
+Respublikaga elektrda harakatlanuvchi avtomobillar importi ikki ming yigirma beshinchi yil iyuldan sezilarli oʻsa boshladi. Jumladan, iyunda chet eldan to'rt ming besh yuz oltmish dona elektromobil olib kelingan boʻlsa, iyulda bu raqam yetti ming ikki yuz to'rt donani tashkil etgan.
+
+Noyabr oyida import qilingan elektromobillar har bir donasining oʻrtacha qiymati keskin oshganini koʻrish mumkin — o'n to'rt butun sakkiz ming dollar. Mazkur qiymat oktyabrda o'n butun uch ming dollardan toʻgʻri kelgandi. Bundan bir yil ilgari — ikki ming yigirma to'rtinchi yil noyabrda esa har bir dona elektormobil narxi olti ming bir yuz dollardan tushgan.
+
+Yillik hisobda taqqoslansa, ikki ming yigirma beshinchi yil yanvar-noyabr oylarida Oʻzbekistonga umumiy qiymati olti yuz o'n ikki butun ikki million dollarlik ellik bir ming sakkiz yuz ellik olti dona elektromobil import qilingan. Yaʼni yillik import hajmi ikki baravardan yuqori oʻsgan.
+            """,
         )
 
     # ===== Edge Cases =====
