@@ -185,7 +185,7 @@ class TestNumberToUzbekWord(unittest.TestCase):
             "2025-yil 1-dekabr holatiga ko‘ra olti mln. dollarga yetdi.",
         )
 
-    def test_correct_preprocess_text_spacing_old(self):
+    def test_correct_preprocess_text_spacing_simple(self):
         self.assertEqual(
             self.converter._preprocess_text("Men 5ta kitob oldim"),
             "Men 5ta kitob oldim",
@@ -211,6 +211,18 @@ class TestNumberToUzbekWord(unittest.TestCase):
                 "Yangi BMW X7 mashinasi taxminan 136,390 yevro turadi"
             ),
             "Yangi BMW X 7 mashinasi taxminan 136,390 yevro turadi",
+        )
+
+    def test_correct_preprocess_text_spacing_with_hyphen(self):
+        self.assertEqual(
+            self.converter._preprocess_text("COVID-19 so‘zi qanday kelib chiqdi?"),
+            "COVID-19 so‘zi qanday kelib chiqdi?",
+        )
+        self.assertEqual(
+            self.converter._preprocess_text(
+                "OpenAI o'zining yangi gpt-3.5 modelini e'lon qildi."
+            ),
+            "OpenAI o'zining yangi gpt-3.5 modelini e'lon qildi.",
         )
 
     def test_correct_preprocess_text_spacing_with_percentage(self):
@@ -301,21 +313,31 @@ class TestNumberToUzbekWord(unittest.TestCase):
             self.converter.normalize("Men 5ta kitob oldim"), "Men beshta kitob oldim"
         )
         self.assertEqual(
-            self.converter.normalize("U 25 yoshda"), "U yigirma besh yoshda"
+            self.converter.normalize("U +25 yoshda"), "U +yigirma besh yoshda"
+        )
+        self.assertEqual(
+            self.converter.normalize("Taxminan 5m 25cm"),
+            "Taxminan besh m yigirma besh cm",
         )
 
     def test_normalize_small_range_values(self):
         self.assertEqual(
             self.converter.normalize("Men 2-3 kun ichida qaytaman"),
-            "Men ikki - uch kun ichida qaytaman",
+            "Men ikki-uch kun ichida qaytaman",
         )
-        self.assertEqual(self.converter.normalize("10-15ta"), "o'n - o'n beshta")
+        self.assertEqual(self.converter.normalize("10-15ta"), "o'n-o'n beshta")
+        self.assertEqual(self.converter.normalize("-10-15ta"), "minus o'n - o'n beshta")
+        self.assertEqual(self.converter.normalize("- 10-15ta"), "- o'n-o'n beshta")
         self.assertEqual(
             self.converter.normalize("U 10 - 15 ta kitob sotib oldi."),
             "U o'n - o'n beshta kitob sotib oldi.",
+            "10 - 15 shouldn't match as range value",
         )
-        self.assertEqual(self.converter.normalize("-10-15ta"), "minus o'n - o'n beshta")
-        self.assertEqual(self.converter.normalize("- 10-15ta"), "- o'n - o'n beshta")
+        self.assertEqual(
+            self.converter.normalize("U 10 -15 ta kitob sotib oldi."),
+            "U o'n minus o'n beshta kitob sotib oldi.",
+            "10 -15 shouldn't match as range value",
+        )
 
     def test_normalize_big_range_values(self):
         self.assertEqual(
@@ -362,6 +384,10 @@ class TestNumberToUzbekWord(unittest.TestCase):
             "ikki ming yigirma to'rtinchi yilga nisbatan yigirma besh foizga koʻp",
         )
         self.assertEqual(
+            self.converter.normalize("A.Navoiy ko‘chasi, -25-uy"),
+            "A.Navoiy ko‘chasi, minus yigirma beshinchi uy",
+        )
+        self.assertEqual(
             self.converter.normalize(
                 "A.Navoiy ko‘chasi, 25-uy va shu ko‘chadagi 41A-uy"
             ),
@@ -393,6 +419,10 @@ class TestNumberToUzbekWord(unittest.TestCase):
         self.assertEqual(
             self.converter.normalize("-1,234.22 ta"),
             "minus bir ming ikki yuz o'ttiz to'rt butun yigirma ikkita",
+        )
+        self.assertEqual(
+            self.converter.normalize("Katta raqam: 1.234,567ta"),
+            "Katta raqam: bir butun ikki yuz o'ttiz to'rt,besh yuz oltmish yettita",
         )
         self.assertEqual(
             self.converter.normalize("3 000 000.04 so'm"),
@@ -429,6 +459,10 @@ class TestNumberToUzbekWord(unittest.TestCase):
 
     def test_normalize_negative_in_text(self):
         self.assertEqual(
+            self.converter.normalize("-15 daraja"),
+            "minus o'n besh daraja",
+        )
+        self.assertEqual(
             self.converter.normalize("Harorat -15 daraja"),
             "Harorat minus o'n besh daraja",
         )
@@ -443,6 +477,24 @@ class TestNumberToUzbekWord(unittest.TestCase):
         self.assertEqual(
             self.converter.normalize("Harorat - 15.7 daraja"),
             "Harorat - o'n besh butun yetti daraja",
+        )
+
+    def test_normalize_hyphen_in_text_not_negative(self):
+        self.assertEqual(
+            self.converter.normalize(
+                "Hozircha eng yomon ko'rilgan operatsion tizim bu - Windows-11"
+            ),
+            "Hozircha eng yomon ko'rilgan operatsion tizim bu - Windows-o'n bir",
+        )
+        self.assertEqual(
+            self.converter.normalize("COVID-19 so‘zi qanday kelib chiqdi?"),
+            "COVID-o'n to'qqiz so‘zi qanday kelib chiqdi?",
+        )
+        self.assertEqual(
+            self.converter.normalize(
+                "OpenAI o'zining yangi gpt-3.5 modelini e'lon qildi."
+            ),
+            "OpenAI o'zining yangi gpt-uch butun besh modelini e'lon qildi.",
         )
 
     def test_normalize_currency_prefix(self):
@@ -500,9 +552,10 @@ class TestNumberToUzbekWord(unittest.TestCase):
     def test_normalize_mixed_patterns(self):
         result = self.converter.normalize("1-bob: 2-3 kun, 1,000 so'm, 5.5 kg")
         self.assertEqual(
-            result, "birinchi bob: ikki - uch kun, ming so'm, besh butun besh kg"
+            result, "birinchi bob: ikki-uch kun, ming so'm, besh butun besh kg"
         )
 
+    # Credits: Daryo.uz
     def test_normalize_mixed_patterns_extended(self):
         result = self.converter.normalize(
             """
@@ -529,6 +582,25 @@ Yillik hisobda taqqoslansa, ikki ming yigirma beshinchi yil yanvar-noyabr oylari
         )
 
     # ===== Edge Cases =====
+    def test_with_one_and_ta(self):
+        self.assertEqual(
+            self.converter.normalize("Men 1 ta kitob oldim"),
+            "Men bitta kitob oldim",
+            "Special case: 'bir' + 'ta' = 'bitta' not 'birta'",
+        )
+        self.assertEqual(
+            self.converter.normalize("Men 51ta kitob oldim"),
+            "Men ellik bitta kitob oldim",
+        )
+        self.assertEqual(
+            self.converter.normalize("1,001 ta"),
+            "bir ming bitta",
+        )
+        self.assertEqual(
+            self.converter.normalize("1 001 tata"),
+            "bir ming bir tata",
+        )
+
     def test_zero(self):
         self.assertEqual(self.converter._convert(0), "nol")
         self.assertEqual(self.converter.normalize("0 ta"), "nolta")

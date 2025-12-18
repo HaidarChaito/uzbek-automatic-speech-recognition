@@ -19,10 +19,10 @@ class NumberToUzbekWord:
         - Percentages: 60% → "oltmish foiz"
         - Abbreviations: 17,3 mlrd → "17,3 milliard"
         - Quantifiers: 5ta → "beshta"
-        - Case suffixes: $32,08 ga, 60% ni → oltmish foizni
+        - Case suffixes: $32,08 dan, 60% ga → oltmish foizga
 
     Limitations:
-        - Doesn't appropriately support time, roman numerals, and phone numbers
+        - Doesn't appropriately support time, roman numerals, phone numbers, and fractions
     """
 
     def __init__(self):
@@ -125,6 +125,12 @@ class NumberToUzbekWord:
                 num2 = self._convert(
                     float(num2_str) if "." in num2_str else int(num2_str)
                 )
+
+                # Don't add space around hyphen if one word number
+                is_first_number_one_word = len(num1.split(" ")) == 1
+                if is_first_number_one_word:
+                    return f"{num1}-{num2}{additional_suffix}"
+
                 return f"{num1} - {num2}{additional_suffix}"
 
             # 4. Ordinal numbers: 2-qism
@@ -176,7 +182,7 @@ class NumberToUzbekWord:
         # Pattern that matches all number types (order matters - more specific patterns first)
         pattern = (
             rf"(?:{currency_symbols_regex} ?)?"  # optional currency prefix: $, €, £, ₽
-            + r"-?\d+"  # required main number (can be negative): 10, -156
+            + r"(?:(?<!\w)-\d+|\d+)"  # required main number (can be negative but exclude hyphen words: e.g. covid-19 => match 19, not -19): 10, -156
             + r"(?:(?:,\d{3})+| (?:\d{3} )+\d{3})?"  # optional thousand separators (all commas OR all spaces): ,000,000 |  000 000
             + r"(?:[, ]\d{3})*"  # optional thousand separators (comma or space):
             + r"(?:[.,]\d+)?"  # optional decimal part: .1415 | ,1415
@@ -189,6 +195,10 @@ class NumberToUzbekWord:
         text = self._preprocess_text(text)
 
         result = re.sub(pattern, convert_match, text)
+
+        # Ensure assimilation rule: bir + ta = bitta [not birta]
+        result = re.sub(r"\bbirta\b", "bitta", result)
+
         return result
 
     def _preprocess_text(self, text):
