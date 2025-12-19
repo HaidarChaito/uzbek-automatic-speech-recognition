@@ -1,10 +1,15 @@
 import math
 
+from scripts.uzbek_number_normalizer import NumberToUzbekWord
+
+
 def normalize_text(
     text: str,
+    should_normalize_numbers_to_words: bool = True,
     should_remove_punctuations: bool = False,
     should_normalize_capitalization: bool = True,
     should_lowercase_text: bool = False,
+    should_remove_ellipsis=False,
     normalize_domains: bool = True,
     should_normalize_annotations: bool = True,
     lowercase_annotations: bool = True,
@@ -17,10 +22,11 @@ def normalize_text(
 
     Pipeline order:
     1. Remove newlines and carriage returns
+    2. Normalize numbers to Uzbek words (optional)
     2. Clean bullet points and list markers (e.g. •, -, 1.)
     3. Normalize apostrophe variants to standard ASCII apostrophe (')
     4. Normalize annotation markers (optional)
-    5. Remove special chars: quotes (", “, ”, «, ...), colons (:), ellipses (...) etc.
+    5. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
     6. Remove punctuations (optional): "!", ",", ".", ";", "?"
     7. Clean excessive whitespace
     8. Fix spacing around punctuation
@@ -29,9 +35,11 @@ def normalize_text(
 
     Args:
         text: Raw transcribed text to normalize
+        should_normalize_numbers_to_words: If True, normalize numbers to Uzbek words (e.g. 15% -> o'n besh foiz)
         should_remove_punctuations: If True, punctuation charecters will be removed (.,?!:)
         should_normalize_capitalization: If True, normalize capitalization (e.g. capitalization after punctuations)
         should_lowercase_text: If True, makes entire text to lowercase
+        should_remove_ellipsis: If True, removes ellipsis (...) from text [use it with read speeach]
         normalize_domains: If True, capitalize .uz domain names (e.g., "qalampir.uz" -> "Qalampir uz")
         should_normalize_annotations: If True, normalize annotation brackets: (text), *[text]* -> [text]
         lowercase_annotations: If True, lowercase text within annotations
@@ -53,13 +61,18 @@ def normalize_text(
     text = str(text)
 
     text = remove_new_lines(text)
+
+    if should_normalize_numbers_to_words:
+        number_to_uzbek_word = NumberToUzbekWord()
+        text = number_to_uzbek_word.normalize(text)
+
     text = remove_list_markers(text)
     text = normalize_uzbek_apostrophes(text)
 
     if should_normalize_annotations:
         text = normalize_annotations(text, lowercase_annotation=lowercase_annotations)
 
-    text = remove_special_chars(text)
+    text = remove_special_chars(text, remove_ellipsis=should_remove_ellipsis)
     if should_remove_punctuations:
         text = remove_punctuations(text)
 
@@ -113,6 +126,7 @@ def normalize_uzbek_apostrophes(text: str) -> str:
         "ʻ",  # U+02BB (modifier letter turned comma)
         "ʽ",  # U+02BD (modifier letter reversed comma)
         "`",  # U+0060 (grave accent)
+        "´",  # U+00B4 (acute accent)
         "ˊ",  # U+02CA (modifier letter acute accent)
         "ˋ",  # U+02CB (modifier letter grave accent)
     ]
@@ -158,6 +172,7 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
         "‟",
         "«",
         "»",
+        "˝",
         ":",
         "#",
         "&",
@@ -175,10 +190,16 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
         "|",
         "}",
         "~",
+        "™",
+        "©",
     ]
 
     for char in chars_to_remove:
         text = text.replace(char, "")
+
+    # Remove dashes and hyphens acting as dashes (space on both sides)
+    # Avoids cases with numbers e.g. 2021 - 2025 or "Tashqarida - 5 gradus sovuq"
+    text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
 
     if remove_ellipsis:
         text = text.replace("…", "")  # Single ellipsis character

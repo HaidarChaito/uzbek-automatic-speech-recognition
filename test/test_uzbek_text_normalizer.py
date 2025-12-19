@@ -1,6 +1,7 @@
 import math
 import unittest
 
+from scripts.uzbek_number_normalizer import NumberToUzbekWord
 from scripts.uzbek_text_normalizer import (
     remove_whitespaces,
     remove_list_markers,
@@ -152,6 +153,42 @@ class TestRemoveSpecialChars(unittest.TestCase):
                 "Birdan Stalin: «Lavrentiy, chora ko'r», deb qolardi.:"
             ),
             "Birdan Stalin Lavrentiy, chora ko'r, deb qolardi.",
+        )
+
+    def test_remove_dashes(self):
+        self.assertEqual(
+            remove_special_chars(
+                "Ot o'ynasa chavandozni maqtaydilar, qilich o'ynasa ― qo'lni."
+            ),
+            "Ot o'ynasa chavandozni maqtaydilar, qilich o'ynasa qo'lni.",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Bu mutlaqo asossiz gaplar! - Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi"
+            ),
+            "Bu mutlaqo asossiz gaplar! Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi",
+        )
+
+    def test_keep_dashes(self):
+        self.assertEqual(
+            remove_special_chars("asossiz gaplar! -Shavkat Mirziyoyev"),
+            "asossiz gaplar! -Shavkat Mirziyoyev",
+        )
+        self.assertEqual(
+            remove_special_chars("Asossiz gaplar- Shavkat Mirziyoyev"),
+            "Asossiz gaplar- Shavkat Mirziyoyev",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi.",
+                remove_ellipsis=True,
+            ),
+            "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi.",
+        )
+        self.assertEqual(
+            remove_special_chars("Tashqarida - 5 gradus sovuq", remove_ellipsis=True),
+            "Tashqarida - 5 gradus sovuq",
+            "Should keep hyphen if both sides are not letters or punctuation.",
         )
 
     def test_remove_2dots(self):
@@ -553,18 +590,21 @@ class TestIntegration(unittest.TestCase):
     """Integration tests combining multiple functions"""
 
     def test_case_insensitive_asr_normalization_pipeline(self):
+        # Credits: Kun.uz
         text = """
-        Rasmiy  xabarda bu ishlar “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan. @Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni > ifloslantirayotgan ekan. (random Noise) Shuning uchun ularning tandirini buzish kerak ekan.
+        Rasmiy  xabarda bu ishlar “havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari” deb atalgan. 19-avgust @Ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni > ifloslantirayotgan ekan... (random Noise) Shuning uchun ularning tandirini buzish kerak ekan.
 
-        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman #hokimi Hikmatullo Dadaxonov ham aks etgan. ? u buzish ishlariga boshqa mas’ullar bilan birga, shaxsan (oddiy qavs ichida gap) o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, [ Annotatsiya ] video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
+        Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman #hokimi - Hikmatullo Dadaxonov ham aks etgan. ? u buzish ishlariga boshqa mas’ullar bilan birga, 3,05% ga shaxsan (oddiy qavs ichida gap) o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, [ Annotatsiya ] video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
+        number_to_uzbek_word = NumberToUzbekWord()
 
         # Step by step
         text = remove_new_lines(text)
+        text = number_to_uzbek_word.normalize(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
-        text = remove_special_chars(text)
+        text = remove_special_chars(text, remove_ellipsis=True)
         text = remove_punctuations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
@@ -572,18 +612,20 @@ class TestIntegration(unittest.TestCase):
 
         self.assertEqual(
             text,
-            "rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan ya'ni andijonlik mulozimlarning fikricha somsapazlar havoni ifloslantirayotgan ekan (random noise) shuning uchun ularning tandirini buzish kerak ekan shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi hikmatullo dadaxonov ham aks etgan u buzish ishlariga boshqa mas'ullar bilan birga shaxsan (oddiy qavs ichida gap) o'zi bosh-qosh bo'lib turgan voqea katta shov-shuvni keltirib chiqargach [annotatsiya] video va rasmlar hokimlik kanalidan darhol o'chirildi viloyat hokimligi tezda bayonot bilan chiqib dadaxonovga hayfsan berilganini ma'lum qildi",
+            "rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan o'n to'qqizinchi avgust ya'ni andijonlik mulozimlarning fikricha somsapazlar havoni ifloslantirayotgan ekan (random noise) shuning uchun ularning tandirini buzish kerak ekan shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi hikmatullo dadaxonov ham aks etgan u buzish ishlariga boshqa mas'ullar bilan birga uch butun nol besh foizga shaxsan (oddiy qavs ichida gap) o'zi bosh-qosh bo'lib turgan voqea katta shov-shuvni keltirib chiqargach [annotatsiya] video va rasmlar hokimlik kanalidan darhol o'chirildi viloyat hokimligi tezda bayonot bilan chiqib dadaxonovga hayfsan berilganini ma'lum qildi",
         )
 
     def test_case_sensitive_asr_normalization_pipeline(self):
         text = """
-        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan.
+        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan. 19-avgust
 
         Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish  ishlariga boshqa mas’ullar bilan < birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
+        number_to_uzbek_word = NumberToUzbekWord()
 
         # Step by step
         text = remove_new_lines(text)
+        text = number_to_uzbek_word.normalize(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
@@ -594,7 +636,35 @@ class TestIntegration(unittest.TestCase):
 
         self.assertEqual(
             text,
-            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
+            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. O'n to'qqizinchi avgust Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
+        )
+
+    def test_case_extended_number_normalization_pipeline(self):
+        text = """
+        Yana bir jihati, maktab-internatning manzili – Izboskan tumani, To‘rtko‘l shaharchasi, A.Navoiy ko‘chasi, 25-uyda, g‘oliblar esa xuddi shu ko‘chadagi 41A-uyda joylashgan.
+
+        Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo‘yicha ikkita tanlov o‘tkazdi. 1- xaridning boshlang‘ich qiymati 276 mln so‘m, 2-siniki esa 79 mln. so‘m etib belgilangan. Ikki xaridda ham Gree Air Prom, “Stroy biznes servis energiya”, Clivent va Gelios Line Technology MCHJlari ishtirok etgan.
+  
+        2025-yil yanvar-noyabr oylarida soʻm almashuv kursi 7,5 %ga mustahkamlandi. Markaziy bank tahliliga koʻra, bunga qator omillar taʼsir koʻrsatdi.
+
+        Soʻm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul oʻtkazmalari keskin o‘sgani muhim rol oʻynagan. Ya’ni yanvar-noyabr oylarida Oʻzbekistonga muhojirlardan $17,3 mlrd kelib tushgan (2024-yil mos davridagidan 25 % koʻp). Bu ichki valyuta bozoridagi taklifni ragʻbatlantirib, milliy valyuta qadri mustahkamlanishi jiddiy taʼsir etgan. 
+        """
+        number_to_uzbek_word = NumberToUzbekWord()
+
+        # Step by step
+        text = remove_new_lines(text)
+        text = number_to_uzbek_word.normalize(text)
+        text = remove_list_markers(text)
+        text = normalize_uzbek_apostrophes(text)
+        text = normalize_annotations(text)
+        text = remove_special_chars(text)
+        text = remove_whitespaces(text)
+        text = normalize_spacing_around_punc(text)
+        text = normalize_capitalization(text)
+
+        self.assertEqual(
+            text,
+            "Yana bir jihati, maktab-internatning manzili Izboskan tumani, To'rtko'l shaharchasi, A. Navoiy ko'chasi, yigirma beshinchi uyda, g'oliblar esa xuddi shu ko'chadagi qirq bir A-uyda joylashgan. Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo'yicha ikkita tanlov o'tkazdi. Bir- xaridning boshlang'ich qiymati ikki yuz yetmish olti million so'm, ikkinchi siniki esa yetmish to'qqiz million so'm etib belgilangan. Ikki xaridda ham Gree Air Prom, Stroy biznes servis energiya, Clivent va Gelios Line Technology MCHJlari ishtirok etgan. Ikki ming yigirma beshinchi yil yanvar-noyabr oylarida so'm almashuv kursi yetti butun besh foizga mustahkamlandi. Markaziy bank tahliliga ko'ra, bunga qator omillar ta'sir ko'rsatdi. So'm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul o'tkazmalari keskin o'sgani muhim rol o'ynagan. Ya'ni yanvar-noyabr oylarida O'zbekistonga muhojirlardan o'n yetti butun uch dollar milliard kelib tushgan (ikki ming yigirma to'rtinchi yil mos davridagidan yigirma besh foiz ko'p). Bu ichki valyuta bozoridagi taklifni rag'batlantirib, milliy valyuta qadri mustahkamlanishi jiddiy ta'sir etgan.",
         )
 
     def test_capitalization_pipeline(self):

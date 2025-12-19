@@ -10,15 +10,19 @@ def calculate(reference: str, hypothesis: str):
     # Normalize both texts
     ref_normalized = normalize_text(
         reference,
+        should_normalize_numbers_to_words=True,
         should_remove_punctuations=True,
         should_normalize_capitalization=False,
         should_lowercase_text=True,
+        should_remove_ellipsis=True,
     )
     hyp_normalized = normalize_text(
         hypothesis,
+        should_normalize_numbers_to_words=True,
         should_remove_punctuations=True,
         should_normalize_capitalization=False,
         should_lowercase_text=True,
+        should_remove_ellipsis=True,
     )
 
     # Word Error Rate (WER)
