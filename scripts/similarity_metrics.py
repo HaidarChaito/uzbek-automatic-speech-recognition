@@ -1,3 +1,4 @@
+import math
 from difflib import SequenceMatcher
 
 import jiwer
@@ -7,6 +8,9 @@ from scripts.uzbek_text_normalizer import normalize_text
 
 def calculate(reference: str, hypothesis: str):
     """Calculate WER, CER, sequence_similarity metrics between reference and hypothesis texts."""
+    reference = _get_safe_string_if_nan(reference)
+    hypothesis = _get_safe_string_if_nan(hypothesis)
+
     # Normalize both texts
     ref_normalized = normalize_text(
         reference,
@@ -43,3 +47,12 @@ def calculate(reference: str, hypothesis: str):
         "ref_word_count": len(ref_normalized.split()),
         "hyp_word_count": len(hyp_normalized.split()),
     }
+
+
+def _get_safe_string_if_nan(text) -> str:
+    # Checks for NaN or empty string safely
+    is_nan = isinstance(text, float) and math.isnan(text)
+    if text is None or is_nan or str(text).strip() == "":
+        return ""
+
+    return str(text)
