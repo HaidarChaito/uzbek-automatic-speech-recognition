@@ -122,16 +122,17 @@
 
         .sample-grid {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 250px 1fr;
             gap: 20px;
         }
 
-        /* Left Sidebar: Audio & Meta */
+        /* Left Sidebar: Meta Only */
         .sidebar {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 6px;
             border: 1px solid #dee2e6;
+            height: fit-content;
         }
 
         .meta-item {
@@ -145,15 +146,7 @@
             display: block;
         }
 
-        .audio-wrapper {
-            margin-top: 15px;
-        }
-
-        audio {
-            width: 100%;
-        }
-
-        /* Right Content: Diff & Inputs */
+        /* Right Content */
         .main-content {
             display: flex;
             flex-direction: column;
@@ -242,11 +235,6 @@
             flex-direction: column;
         }
 
-        .input-group.highlight {
-            border-color: var(--primary);
-            background: #f0f7fb;
-        }
-
         .group-header {
             display: flex;
             justify-content: space-between;
@@ -307,13 +295,58 @@
             transform: translateY(-1px);
         }
 
+        /* NEW AUDIO PLAYER STYLES */
+        .audio-control-panel {
+            background: #fff;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .audio-control-panel audio {
+            flex-grow: 1;
+            height: 45px;
+            outline: none;
+        }
+
+        .seek-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e0;
+            color: #2c3e50;
+            padding: 0 20px;
+            height: 45px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            font-size: 14px;
+            min-width: 90px;
+        }
+
+        .seek-btn:hover {
+            background: #e2e8f0;
+            border-color: #a0aec0;
+        }
+
+        .seek-btn:active {
+            transform: scale(0.96);
+            background: #dce2e8;
+        }
+
+
         /* Final Check Area */
         .final-area {
             background: #e8f6f3;
             padding: 20px;
             border-radius: 6px;
             border: 1px solid #d1f2eb;
-            margin-top: 10px;
         }
 
         .final-label {
@@ -329,7 +362,7 @@
             font-size: 16px;
         }
 
-        /* Buttons */
+        /* General Buttons */
         .btn {
             background: var(--primary);
             color: white;
@@ -371,10 +404,10 @@
             font-size: 12px;
             color: #7f8c8d;
             margin-top: 20px;
-            text-align: center;
             background: #fff;
             padding: 10px;
             border-radius: 4px;
+            border: 1px solid #eee;
         }
 
         kbd {
@@ -383,6 +416,7 @@
             border-radius: 3px;
             border: 1px solid #ccc;
             font-family: monospace;
+            font-size: 11px;
         }
 
         .hidden {
@@ -395,7 +429,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>ASR Tool v2.0</h1>
+        <h1>ASR Tool v2.1</h1>
         <div class="progress-section">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
@@ -406,7 +440,7 @@
 
     <div class="load-section" id="loadSection">
         <h2>Start Session</h2>
-        <label>1. CSV File (with columns: id, path_wav, sentence, predicted_sentence, ref_normalized,
+        <label>1. Expected CSV File (with columns: id, path_wav, sentence, predicted_sentence, ref_normalized,
             hyp_normalized)</label>
         <input type="file" id="csvFile" accept=".csv" class="file-input">
 
@@ -438,25 +472,23 @@
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">File</span>
-                    <span id="audioPath" style="word-break: break-all;">-</span>
-                </div>
-
-                <div class="audio-wrapper">
-                    <audio id="audioPlayer" controls></audio>
+                    <span id="audioPath"
+                          style="word-break: break-all; font-family: monospace; font-size: 11px;">-</span>
                 </div>
 
                 <div class="meta-item" style="margin-top: 20px;">
                     <span class="meta-label">Current WER</span>
-                    <span id="liveWer"
-                          style="font-size: 24px; font-weight: bold; color: var(--danger);">0.00%</span>
+                    <span id="liveWer" style="font-size: 24px; font-weight: bold; color: var(--danger);">0.00%</span>
                 </div>
 
                 <div class="shortcuts">
-                    <div style="margin-bottom:5px;"><b>Shortcuts:</b></div>
-                    <div><kbd>Space</kbd> Play/Pause</div>
-                    <div><kbd>Alt</kbd>+<kbd>1</kbd> Pick Original</div>
-                    <div><kbd>Alt</kbd>+<kbd>2</kbd> Pick Predicted</div>
-                    <div><kbd>Ctrl</kbd>+<kbd>→</kbd> Next</div>
+                    <div style="margin-bottom:8px; font-weight:bold;">Shortcuts</div>
+                    <div style="margin-bottom:4px;"><kbd>Space</kbd> Play/Pause</div>
+                    <div style="margin-bottom:4px;"><kbd>←</kbd> Back 2s</div>
+                    <div style="margin-bottom:4px;"><kbd>→</kbd> Fwd 2s</div>
+                    <div style="margin-bottom:4px;"><kbd>Alt</kbd>+<kbd>1</kbd> Pick Orig</div>
+                    <div style="margin-bottom:4px;"><kbd>Alt</kbd>+<kbd>2</kbd> Pick Pred</div>
+                    <div style="margin-bottom:4px;"><kbd>Ctrl</kbd>+<kbd>→</kbd> Next</div>
                     <div><kbd>Ctrl</kbd>+<kbd>S</kbd> Save</div>
                 </div>
             </div>
@@ -467,10 +499,10 @@
                     <div class="diff-header">
                         <span>Normalization Diff</span>
                         <span>
-                                <span style="color:var(--danger)">■ Del</span>
-                                <span style="color:var(--success); margin-left:10px;">■ Ins</span>
-                                <span style="color:var(--sub-color); margin-left:10px;">■ Change</span>
-                            </span>
+                            <span style="color:var(--danger)">■ Del</span>
+                            <span style="color:var(--success); margin-left:10px;">■ Ins</span>
+                            <span style="color:var(--sub-color); margin-left:10px;">■ Change</span>
+                        </span>
                     </div>
                     <div class="diff-content" id="diffView"></div>
                 </div>
@@ -479,36 +511,37 @@
                     <div class="input-group">
                         <div class="group-header">
                             <span class="group-title">Original (Ref)</span>
-                            <button class="btn-pick" id="pickOriginalBtn"
-                                    title="Use Original Raw text for final check (Alt+1)">Use This
+                            <button class="btn-pick" id="pickOriginalBtn" title="Use Original Raw text (Alt+1)">Use
+                                This
                             </button>
                         </div>
-
                         <span class="field-label">Raw Sentence</span>
                         <textarea id="inputRefRaw" class="text-field" rows="2"></textarea>
-
-                        <span class="field-label">Normalized (Editable)</span>
+                        <span class="field-label">Normalized</span>
                         <textarea id="inputRefNorm" class="text-field norm"></textarea>
                     </div>
 
                     <div class="input-group">
                         <div class="group-header">
                             <span class="group-title">Predicted (Hyp)</span>
-                            <button class="btn-pick" id="pickHypBtn"
-                                    title="Use Predicted Raw text for final check (Alt+2)">Use This
+                            <button class="btn-pick" id="pickHypBtn" title="Use Predicted Raw text (Alt+2)">Use This
                             </button>
                         </div>
-
                         <span class="field-label">Raw Sentence</span>
                         <textarea id="inputHypRaw" class="text-field" rows="2"></textarea>
-
-                        <span class="field-label">Normalized (Editable)</span>
+                        <span class="field-label">Normalized</span>
                         <textarea id="inputHypNorm" class="text-field norm"></textarea>
                     </div>
                 </div>
 
+                <div class="audio-control-panel">
+                    <button class="seek-btn" id="seekBackBtn">↺ 2s</button>
+                    <audio id="audioPlayer" controls></audio>
+                    <button class="seek-btn" id="seekFwdBtn">2s ↻</button>
+                </div>
+
                 <div class="final-area">
-                    <label class="final-label">Final Checked Sentence (Exported)</label>
+                    <label class="final-label">Final Checked Sentence</label>
                     <textarea id="checkedText" class="text-field"
                               placeholder="Select Original or Predicted above, or type manually..."></textarea>
                 </div>
@@ -556,6 +589,10 @@
             pickOriginalBtn: document.getElementById('pickOriginalBtn'),
             pickHypBtn: document.getElementById('pickHypBtn'),
 
+            // New Audio Buttons
+            seekBackBtn: document.getElementById('seekBackBtn'),
+            seekFwdBtn: document.getElementById('seekFwdBtn'),
+
             prevBtn: document.getElementById('prevBtn'),
             nextBtn: document.getElementById('nextBtn'),
             saveBtn: document.getElementById('saveBtn'),
@@ -568,8 +605,6 @@
         };
 
         // --- INITIALIZATION ---
-
-        // Check saved state
         if (localStorage.getItem(STORAGE_KEY)) {
             els.continueBtn.classList.remove('hidden');
         }
@@ -585,13 +620,11 @@
             try {
                 const csvContent = await els.csvFile.files[0].text();
                 samples = parseCSV(csvContent);
-
                 for (let f of els.audioDir.files) audioFiles.set(f.name, f);
 
-                // Init fields if missing
+                // Initialize missing fields
                 samples.forEach(s => {
                     if (!s.sentence_checked) s.sentence_checked = '';
-                    // Ensure norms exist
                     if (!s.ref_normalized) s.ref_normalized = '';
                     if (!s.hyp_normalized) s.hyp_normalized = '';
                 });
@@ -616,15 +649,12 @@
         }
 
         // --- CORE LOGIC ---
-
         function loadSample() {
             const s = samples[currentIndex];
-
-            // Metadata
             els.sampleId.textContent = s.id;
             els.audioPath.textContent = s.path_wav;
 
-            // Audio
+            // Load Audio
             const filename = s.path_wav.split(/[\/\\]/).pop();
             if (audioFiles.has(filename)) {
                 els.audioPlayer.src = URL.createObjectURL(audioFiles.get(filename));
@@ -632,7 +662,7 @@
                 console.warn('Audio missing:', filename);
             }
 
-            // Inputs
+            // Fill Inputs
             els.inputRefRaw.value = s.sentence || '';
             els.inputRefNorm.value = s.ref_normalized || '';
             els.inputHypRaw.value = s.predicted_sentence || '';
@@ -646,27 +676,18 @@
         function updateCalculations() {
             const ref = els.inputRefNorm.value;
             const hyp = els.inputHypNorm.value;
-
             const diff = calculateDiff(ref, hyp);
-
-            // Update WER display
             const wer = calculateWER(diff.ops, diff.refLen);
             els.liveWer.textContent = (wer * 100).toFixed(2) + '%';
-
-            // Render Diff
             renderDiffHTML(diff.ops);
         }
 
-        // --- DIFF ALGORITHM (Levenshtein Backtracking) ---
+        // --- DIFF ALGORITHM ---
         function calculateDiff(refStr, hypStr) {
-            // Tokenize simple (split by space, remove empty)
             const r = refStr.trim().split(/\s+/).filter(x => x);
             const h = hypStr.trim().split(/\s+/).filter(x => x);
-
             const n = r.length;
             const m = h.length;
-
-            // Matrix: dp[i][j]
             const dp = Array(n + 1).fill().map(() => Array(m + 1).fill(0));
 
             for (let i = 0; i <= n; i++) dp[i][0] = i;
@@ -677,19 +698,13 @@
                     if (r[i - 1] === h[j - 1]) {
                         dp[i][j] = dp[i - 1][j - 1];
                     } else {
-                        dp[i][j] = Math.min(
-                            dp[i - 1][j] + 1,   // Deletion
-                            dp[i][j - 1] + 1,   // Insertion
-                            dp[i - 1][j - 1] + 1  // Substitution
-                        );
+                        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1);
                     }
                 }
             }
 
-            // Backtrack
             let i = n, j = m;
             const ops = [];
-
             while (i > 0 || j > 0) {
                 if (i > 0 && j > 0 && r[i - 1] === h[j - 1]) {
                     ops.push({type: 'match', val: r[i - 1]});
@@ -707,7 +722,6 @@
                     j--;
                 }
             }
-
             return {ops: ops.reverse(), refLen: n};
         }
 
@@ -731,6 +745,11 @@
         }
 
         // --- ACTIONS ---
+        function seek(seconds) {
+            if (els.audioPlayer.duration) {
+                els.audioPlayer.currentTime = Math.max(0, Math.min(els.audioPlayer.duration, els.audioPlayer.currentTime + seconds));
+            }
+        }
 
         function saveCurrent() {
             const s = samples[currentIndex];
@@ -740,7 +759,6 @@
             s.hyp_normalized = els.inputHypNorm.value;
             s.sentence_checked = els.checkedText.value;
 
-            // Save to local storage
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 samples: samples,
                 currentIndex: currentIndex,
@@ -765,32 +783,32 @@
         }
 
         // --- EVENT HANDLERS ---
-
-        // Live update of WER when typing in Norm fields
         els.inputRefNorm.addEventListener('input', updateCalculations);
         els.inputHypNorm.addEventListener('input', updateCalculations);
 
-        // Auto-save Checked Text
         els.checkedText.addEventListener('input', () => {
             samples[currentIndex].sentence_checked = els.checkedText.value;
             updateStats();
         });
 
-        // Buttons
+        // Button Clicks
         els.nextBtn.onclick = goToNext;
         els.prevBtn.onclick = goToPrev;
         els.saveBtn.onclick = () => {
             saveCurrent();
             alert('Saved!');
         };
+        els.exportBtn.onclick = () => {
+            saveCurrent();
+            exportCSV();
+        };
 
         els.pickOriginalBtn.onclick = () => {
             els.checkedText.value = els.inputRefRaw.value;
             els.checkedText.focus();
-            saveCurrent(); // Save immediately so status updates
+            saveCurrent();
             updateStats();
         };
-
         els.pickHypBtn.onclick = () => {
             els.checkedText.value = els.inputHypRaw.value;
             els.checkedText.focus();
@@ -798,54 +816,62 @@
             updateStats();
         };
 
-        els.exportBtn.onclick = () => {
-            saveCurrent();
-            exportCSV();
-        };
+        // Seek Buttons
+        els.seekBackBtn.onclick = () => seek(-2);
+        els.seekFwdBtn.onclick = () => seek(2);
 
         // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
-            // Alt+1: Pick Original
+            const tag = e.target.tagName;
+            const isInput = tag === 'TEXTAREA' || tag === 'INPUT';
+
+            // Alt+1 / Alt+2
             if (e.altKey && e.key === '1') {
                 e.preventDefault();
                 els.pickOriginalBtn.click();
             }
-            // Alt+2: Pick Predicted
             if (e.altKey && e.key === '2') {
                 e.preventDefault();
                 els.pickHypBtn.click();
             }
-            // Ctrl+ArrowRight
+
+            // Ctrl + Arrow Navigation
             if (e.ctrlKey && e.key === 'ArrowRight') {
                 e.preventDefault();
                 goToNext();
             }
-            // Ctrl+ArrowLeft
             if (e.ctrlKey && e.key === 'ArrowLeft') {
                 e.preventDefault();
                 goToPrev();
             }
-            // Ctrl+S
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 saveCurrent();
             }
-            // Space for Audio (prevent scrolling)
-            if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
+
+            // Space (Play/Pause)
+            if (e.code === 'Space' && !isInput) {
                 e.preventDefault();
                 els.audioPlayer.paused ? els.audioPlayer.play() : els.audioPlayer.pause();
+            }
+
+            // Arrow Keys for Audio (Only if NOT typing)
+            if (e.key === 'ArrowLeft' && !isInput && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                seek(-2);
+            }
+            if (e.key === 'ArrowRight' && !isInput && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                seek(2);
             }
         });
 
         // --- UTILS ---
-
         function updateStats() {
             const total = samples.length;
             const done = samples.filter(s => s.sentence_checked && s.sentence_checked.trim().length > 0).length;
-
             els.progressFill.style.width = `${((currentIndex + 1) / total) * 100}%`;
             els.progressText.textContent = `${currentIndex + 1} / ${total}`;
-
             els.checkedCount.textContent = done;
             els.remainingCount.textContent = total - done;
         }
@@ -854,12 +880,9 @@
             const lines = text.trim().split('\n');
             const headers = lines[0].split(',').map(h => h.trim());
             const data = [];
-
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
-                // Simple quote-aware CSV parser
                 const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-                // Better regex fallback or simple split if no quotes
                 let rowData = [];
                 let inQuote = false;
                 let token = '';
@@ -876,7 +899,6 @@
                     token += char;
                 }
                 rowData.push(token);
-
                 let obj = {};
                 headers.forEach((h, idx) => obj[h] = rowData[idx] ? rowData[idx].trim() : '');
                 data.push(obj);
@@ -887,7 +909,6 @@
         function exportCSV() {
             const headers = Object.keys(samples[0]);
             let csv = headers.join(',') + '\n';
-
             samples.forEach(s => {
                 const row = headers.map(h => {
                     let val = String(s[h] || '');
@@ -898,7 +919,6 @@
                 });
                 csv += row.join(',') + '\n';
             });
-
             const blob = new Blob([csv], {type: 'text/csv'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -909,5 +929,4 @@
     });
 </script>
 </body>
-
 </html>
