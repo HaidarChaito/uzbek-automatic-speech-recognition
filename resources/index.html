@@ -181,7 +181,7 @@
         .diff-content {
             font-family: 'Courier New', monospace;
             font-size: 16px;
-            line-height: 1.8;
+            line-height: 2.5;
             padding: 10px;
             background: #fdfdfd;
             border: 1px solid #eee;
@@ -216,7 +216,8 @@
             position: absolute;
             bottom: 100%;
             left: 0;
-            background: var(--dark);
+            line-height: 1.3;
+            background: rgb(44 62 80 / 85%);
             color: white;
             padding: 2px 6px;
             font-size: 12px;
@@ -392,507 +393,521 @@
 
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1>ASR Tool v2.0</h1>
-            <div class="progress-section">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">0 / 0</div>
+<div class="container">
+    <div class="header">
+        <h1>ASR Tool v2.0</h1>
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0 / 0</div>
+        </div>
+    </div>
+
+    <div class="load-section" id="loadSection">
+        <h2>Start Session</h2>
+        <label>1. CSV File (with columns: id, path_wav, sentence, predicted_sentence, ref_normalized,
+            hyp_normalized)</label>
+        <input type="file" id="csvFile" accept=".csv" class="file-input">
+
+        <label>2. Audio Folder</label>
+        <input type="file" id="audioDir" webkitdirectory directory multiple class="file-input">
+
+        <button class="btn" id="loadBtn" disabled>Load Data</button>
+        <br><br>
+        <button class="btn btn-success hidden" id="continueBtn">Continue Last Session</button>
+    </div>
+
+    <div class="checker-section" id="checkerSection">
+
+        <div class="toolbar">
+            <div>
+                <span class="stats-badge">Done: <span id="checkedCount">0</span></span>
+                <span class="stats-badge">Left: <span id="remainingCount">0</span></span>
+            </div>
+            <div>
+                <button class="btn btn-success" id="exportBtn" style="padding: 5px 15px;">Export CSV</button>
             </div>
         </div>
 
-        <div class="load-section" id="loadSection">
-            <h2>Start Session</h2>
-            <label>1. CSV File (with columns: id, path_wav, sentence, predicted_sentence, ref_normalized,
-                hyp_normalized)</label>
-            <input type="file" id="csvFile" accept=".csv" class="file-input">
-
-            <label>2. Audio Folder</label>
-            <input type="file" id="audioDir" webkitdirectory directory multiple class="file-input">
-
-            <button class="btn" id="loadBtn" disabled>Load Data</button>
-            <br><br>
-            <button class="btn btn-success hidden" id="continueBtn">Continue Last Session</button>
-        </div>
-
-        <div class="checker-section" id="checkerSection">
-
-            <div class="toolbar">
-                <div>
-                    <span class="stats-badge">Done: <span id="checkedCount">0</span></span>
-                    <span class="stats-badge">Left: <span id="remainingCount">0</span></span>
+        <div class="sample-grid">
+            <div class="sidebar">
+                <div class="meta-item">
+                    <span class="meta-label">ID</span>
+                    <span id="sampleId">-</span>
                 </div>
-                <div>
-                    <button class="btn btn-success" id="exportBtn" style="padding: 5px 15px;">Export CSV</button>
+                <div class="meta-item">
+                    <span class="meta-label">File</span>
+                    <span id="audioPath" style="word-break: break-all;">-</span>
+                </div>
+
+                <div class="audio-wrapper">
+                    <audio id="audioPlayer" controls></audio>
+                </div>
+
+                <div class="meta-item" style="margin-top: 20px;">
+                    <span class="meta-label">Current WER</span>
+                    <span id="liveWer"
+                          style="font-size: 24px; font-weight: bold; color: var(--danger);">0.00%</span>
+                </div>
+
+                <div class="shortcuts">
+                    <div style="margin-bottom:5px;"><b>Shortcuts:</b></div>
+                    <div><kbd>Space</kbd> Play/Pause</div>
+                    <div><kbd>Alt</kbd>+<kbd>1</kbd> Pick Original</div>
+                    <div><kbd>Alt</kbd>+<kbd>2</kbd> Pick Predicted</div>
+                    <div><kbd>Ctrl</kbd>+<kbd>→</kbd> Next</div>
+                    <div><kbd>Ctrl</kbd>+<kbd>S</kbd> Save</div>
                 </div>
             </div>
 
-            <div class="sample-grid">
-                <div class="sidebar">
-                    <div class="meta-item">
-                        <span class="meta-label">ID</span>
-                        <span id="sampleId">-</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">File</span>
-                        <span id="audioPath" style="word-break: break-all;">-</span>
-                    </div>
+            <div class="main-content">
 
-                    <div class="audio-wrapper">
-                        <audio id="audioPlayer" controls></audio>
-                    </div>
-
-                    <div class="meta-item" style="margin-top: 20px;">
-                        <span class="meta-label">Current WER</span>
-                        <span id="liveWer"
-                            style="font-size: 24px; font-weight: bold; color: var(--danger);">0.00%</span>
-                    </div>
-
-                    <div class="shortcuts">
-                        <div style="margin-bottom:5px;"><b>Shortcuts:</b></div>
-                        <div><kbd>Space</kbd> Play/Pause</div>
-                        <div><kbd>Alt</kbd>+<kbd>1</kbd> Pick Original</div>
-                        <div><kbd>Alt</kbd>+<kbd>2</kbd> Pick Predicted</div>
-                        <div><kbd>Ctrl</kbd>+<kbd>→</kbd> Next</div>
-                        <div><kbd>Ctrl</kbd>+<kbd>S</kbd> Save</div>
-                    </div>
-                </div>
-
-                <div class="main-content">
-
-                    <div class="diff-box">
-                        <div class="diff-header">
-                            <span>Normalization Diff</span>
-                            <span>
+                <div class="diff-box">
+                    <div class="diff-header">
+                        <span>Normalization Diff</span>
+                        <span>
                                 <span style="color:var(--danger)">■ Del</span>
                                 <span style="color:var(--success); margin-left:10px;">■ Ins</span>
                                 <span style="color:var(--sub-color); margin-left:10px;">■ Change</span>
                             </span>
-                        </div>
-                        <div class="diff-content" id="diffView"></div>
                     </div>
+                    <div class="diff-content" id="diffView"></div>
+                </div>
 
-                    <div class="comparison-row">
-                        <div class="input-group">
-                            <div class="group-header">
-                                <span class="group-title">Original (Ref)</span>
-                                <button class="btn-pick" id="pickOriginalBtn"
-                                    title="Use Original Raw text for final check (Alt+1)">Use This</button>
-                            </div>
-
-                            <span class="field-label">Raw Sentence</span>
-                            <textarea id="inputRefRaw" class="text-field" rows="2"></textarea>
-
-                            <span class="field-label">Normalized (Editable)</span>
-                            <textarea id="inputRefNorm" class="text-field norm"></textarea>
+                <div class="comparison-row">
+                    <div class="input-group">
+                        <div class="group-header">
+                            <span class="group-title">Original (Ref)</span>
+                            <button class="btn-pick" id="pickOriginalBtn"
+                                    title="Use Original Raw text for final check (Alt+1)">Use This
+                            </button>
                         </div>
 
-                        <div class="input-group">
-                            <div class="group-header">
-                                <span class="group-title">Predicted (Hyp)</span>
-                                <button class="btn-pick" id="pickHypBtn"
-                                    title="Use Predicted Raw text for final check (Alt+2)">Use This</button>
-                            </div>
+                        <span class="field-label">Raw Sentence</span>
+                        <textarea id="inputRefRaw" class="text-field" rows="2"></textarea>
 
-                            <span class="field-label">Raw Sentence</span>
-                            <textarea id="inputHypRaw" class="text-field" rows="2"></textarea>
+                        <span class="field-label">Normalized (Editable)</span>
+                        <textarea id="inputRefNorm" class="text-field norm"></textarea>
+                    </div>
 
-                            <span class="field-label">Normalized (Editable)</span>
-                            <textarea id="inputHypNorm" class="text-field norm"></textarea>
+                    <div class="input-group">
+                        <div class="group-header">
+                            <span class="group-title">Predicted (Hyp)</span>
+                            <button class="btn-pick" id="pickHypBtn"
+                                    title="Use Predicted Raw text for final check (Alt+2)">Use This
+                            </button>
                         </div>
-                    </div>
 
-                    <div class="final-area">
-                        <label class="final-label">Final Checked Sentence (Exported)</label>
-                        <textarea id="checkedText" class="text-field"
-                            placeholder="Select Original or Predicted above, or type manually..."></textarea>
-                    </div>
+                        <span class="field-label">Raw Sentence</span>
+                        <textarea id="inputHypRaw" class="text-field" rows="2"></textarea>
 
-                    <div class="nav-buttons">
-                        <button class="btn" id="prevBtn">← Prev</button>
-                        <button class="btn" id="saveBtn">Save Progress</button>
-                        <button class="btn" id="nextBtn">Next →</button>
+                        <span class="field-label">Normalized (Editable)</span>
+                        <textarea id="inputHypNorm" class="text-field norm"></textarea>
                     </div>
+                </div>
+
+                <div class="final-area">
+                    <label class="final-label">Final Checked Sentence (Exported)</label>
+                    <textarea id="checkedText" class="text-field"
+                              placeholder="Select Original or Predicted above, or type manually..."></textarea>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" id="prevBtn">← Prev</button>
+                    <button class="btn" id="saveBtn">Save Progress</button>
+                    <button class="btn" id="nextBtn">Next →</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- STATE ---
-            let samples = [];
-            let audioFiles = new Map();
-            let currentIndex = 0;
-            const STORAGE_KEY = 'asr_checker_v2_progress';
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE ---
+        let samples = [];
+        let audioFiles = new Map();
+        let currentIndex = 0;
+        const STORAGE_KEY = 'asr_checker_v2_progress';
 
-            // --- DOM ELEMENTS ---
-            const els = {
-                loadSection: document.getElementById('loadSection'),
-                checkerSection: document.getElementById('checkerSection'),
-                csvFile: document.getElementById('csvFile'),
-                audioDir: document.getElementById('audioDir'),
-                loadBtn: document.getElementById('loadBtn'),
-                continueBtn: document.getElementById('continueBtn'),
+        // --- DOM ELEMENTS ---
+        const els = {
+            loadSection: document.getElementById('loadSection'),
+            checkerSection: document.getElementById('checkerSection'),
+            csvFile: document.getElementById('csvFile'),
+            audioDir: document.getElementById('audioDir'),
+            loadBtn: document.getElementById('loadBtn'),
+            continueBtn: document.getElementById('continueBtn'),
 
-                sampleId: document.getElementById('sampleId'),
-                audioPath: document.getElementById('audioPath'),
-                audioPlayer: document.getElementById('audioPlayer'),
-                liveWer: document.getElementById('liveWer'),
-                diffView: document.getElementById('diffView'),
+            sampleId: document.getElementById('sampleId'),
+            audioPath: document.getElementById('audioPath'),
+            audioPlayer: document.getElementById('audioPlayer'),
+            liveWer: document.getElementById('liveWer'),
+            diffView: document.getElementById('diffView'),
 
-                inputRefRaw: document.getElementById('inputRefRaw'),
-                inputRefNorm: document.getElementById('inputRefNorm'),
-                inputHypRaw: document.getElementById('inputHypRaw'),
-                inputHypNorm: document.getElementById('inputHypNorm'),
+            inputRefRaw: document.getElementById('inputRefRaw'),
+            inputRefNorm: document.getElementById('inputRefNorm'),
+            inputHypRaw: document.getElementById('inputHypRaw'),
+            inputHypNorm: document.getElementById('inputHypNorm'),
 
-                checkedText: document.getElementById('checkedText'),
+            checkedText: document.getElementById('checkedText'),
 
-                pickOriginalBtn: document.getElementById('pickOriginalBtn'),
-                pickHypBtn: document.getElementById('pickHypBtn'),
+            pickOriginalBtn: document.getElementById('pickOriginalBtn'),
+            pickHypBtn: document.getElementById('pickHypBtn'),
 
-                prevBtn: document.getElementById('prevBtn'),
-                nextBtn: document.getElementById('nextBtn'),
-                saveBtn: document.getElementById('saveBtn'),
-                exportBtn: document.getElementById('exportBtn'),
+            prevBtn: document.getElementById('prevBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            exportBtn: document.getElementById('exportBtn'),
 
-                progressFill: document.getElementById('progressFill'),
-                progressText: document.getElementById('progressText'),
-                checkedCount: document.getElementById('checkedCount'),
-                remainingCount: document.getElementById('remainingCount')
-            };
+            progressFill: document.getElementById('progressFill'),
+            progressText: document.getElementById('progressText'),
+            checkedCount: document.getElementById('checkedCount'),
+            remainingCount: document.getElementById('remainingCount')
+        };
 
-            // --- INITIALIZATION ---
+        // --- INITIALIZATION ---
 
-            // Check saved state
-            if (localStorage.getItem(STORAGE_KEY)) {
-                els.continueBtn.classList.remove('hidden');
-            }
+        // Check saved state
+        if (localStorage.getItem(STORAGE_KEY)) {
+            els.continueBtn.classList.remove('hidden');
+        }
 
-            els.csvFile.addEventListener('change', checkFiles);
-            els.audioDir.addEventListener('change', checkFiles);
+        els.csvFile.addEventListener('change', checkFiles);
+        els.audioDir.addEventListener('change', checkFiles);
 
-            function checkFiles() {
-                els.loadBtn.disabled = !(els.csvFile.files.length && els.audioDir.files.length);
-            }
+        function checkFiles() {
+            els.loadBtn.disabled = !(els.csvFile.files.length && els.audioDir.files.length);
+        }
 
-            els.loadBtn.addEventListener('click', async () => {
-                try {
-                    const csvContent = await els.csvFile.files[0].text();
-                    samples = parseCSV(csvContent);
+        els.loadBtn.addEventListener('click', async () => {
+            try {
+                const csvContent = await els.csvFile.files[0].text();
+                samples = parseCSV(csvContent);
 
-                    for (let f of els.audioDir.files) audioFiles.set(f.name, f);
+                for (let f of els.audioDir.files) audioFiles.set(f.name, f);
 
-                    // Init fields if missing
-                    samples.forEach(s => {
-                        if (!s.sentence_checked) s.sentence_checked = '';
-                        // Ensure norms exist
-                        if (!s.ref_normalized) s.ref_normalized = '';
-                        if (!s.hyp_normalized) s.hyp_normalized = '';
-                    });
-
-                    startSession(0);
-                } catch (e) {
-                    alert('Error: ' + e.message);
-                }
-            });
-
-            els.continueBtn.addEventListener('click', () => {
-                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-                samples = saved.samples;
-                startSession(saved.currentIndex);
-            });
-
-            function startSession(index) {
-                currentIndex = index;
-                els.loadSection.style.display = 'none';
-                els.checkerSection.style.display = 'block';
-                loadSample();
-            }
-
-            // --- CORE LOGIC ---
-
-            function loadSample() {
-                const s = samples[currentIndex];
-
-                // Metadata
-                els.sampleId.textContent = s.id;
-                els.audioPath.textContent = s.path_wav;
-
-                // Audio
-                const filename = s.path_wav.split(/[\/\\]/).pop();
-                if (audioFiles.has(filename)) {
-                    els.audioPlayer.src = URL.createObjectURL(audioFiles.get(filename));
-                } else {
-                    console.warn('Audio missing:', filename);
-                }
-
-                // Inputs
-                els.inputRefRaw.value = s.sentence || '';
-                els.inputRefNorm.value = s.ref_normalized || '';
-                els.inputHypRaw.value = s.predicted_sentence || '';
-                els.inputHypNorm.value = s.hyp_normalized || '';
-                els.checkedText.value = s.sentence_checked || '';
-
-                updateCalculations();
-                updateStats();
-            }
-
-            function updateCalculations() {
-                const ref = els.inputRefNorm.value;
-                const hyp = els.inputHypNorm.value;
-
-                const diff = calculateDiff(ref, hyp);
-
-                // Update WER display
-                const wer = calculateWER(diff.ops, diff.refLen);
-                els.liveWer.textContent = (wer * 100).toFixed(2) + '%';
-
-                // Render Diff
-                renderDiffHTML(diff.ops);
-            }
-
-            // --- DIFF ALGORITHM (Levenshtein Backtracking) ---
-            function calculateDiff(refStr, hypStr) {
-                // Tokenize simple (split by space, remove empty)
-                const r = refStr.trim().split(/\s+/).filter(x => x);
-                const h = hypStr.trim().split(/\s+/).filter(x => x);
-
-                const n = r.length;
-                const m = h.length;
-
-                // Matrix: dp[i][j]
-                const dp = Array(n + 1).fill().map(() => Array(m + 1).fill(0));
-
-                for (let i = 0; i <= n; i++) dp[i][0] = i;
-                for (let j = 0; j <= m; j++) dp[0][j] = j;
-
-                for (let i = 1; i <= n; i++) {
-                    for (let j = 1; j <= m; j++) {
-                        if (r[i - 1] === h[j - 1]) {
-                            dp[i][j] = dp[i - 1][j - 1];
-                        } else {
-                            dp[i][j] = Math.min(
-                                dp[i - 1][j] + 1,   // Deletion
-                                dp[i][j - 1] + 1,   // Insertion
-                                dp[i - 1][j - 1] + 1  // Substitution
-                            );
-                        }
-                    }
-                }
-
-                // Backtrack
-                let i = n, j = m;
-                const ops = [];
-
-                while (i > 0 || j > 0) {
-                    if (i > 0 && j > 0 && r[i - 1] === h[j - 1]) {
-                        ops.push({ type: 'match', val: r[i - 1] });
-                        i--; j--;
-                    } else if (j > 0 && (i === 0 || dp[i][j] === dp[i][j - 1] + 1)) {
-                        ops.push({ type: 'ins', val: h[j - 1] });
-                        j--;
-                    } else if (i > 0 && (j === 0 || dp[i][j] === dp[i - 1][j] + 1)) {
-                        ops.push({ type: 'del', val: r[i - 1] });
-                        i--;
-                    } else {
-                        ops.push({ type: 'sub', ref: r[i - 1], hyp: h[j - 1] });
-                        i--; j--;
-                    }
-                }
-
-                return { ops: ops.reverse(), refLen: n };
-            }
-
-            function calculateWER(ops, refLen) {
-                if (refLen === 0) return 0;
-                let errors = 0;
-                ops.forEach(op => {
-                    if (op.type !== 'match') errors++;
-                });
-                return errors / refLen;
-            }
-
-            function renderDiffHTML(ops) {
-                const html = ops.map(op => {
-                    if (op.type === 'match') return `<span>${op.val}</span>`;
-                    if (op.type === 'del') return `<span class="d-del">${op.val}</span>`;
-                    if (op.type === 'ins') return `<span class="d-ins">${op.val}</span>`;
-                    if (op.type === 'sub') return `<span class="d-sub" data-orig="${op.ref}">${op.hyp}</span>`;
-                }).join(' ');
-                els.diffView.innerHTML = html;
-            }
-
-            // --- ACTIONS ---
-
-            function saveCurrent() {
-                const s = samples[currentIndex];
-                s.sentence = els.inputRefRaw.value;
-                s.predicted_sentence = els.inputHypRaw.value;
-                s.ref_normalized = els.inputRefNorm.value;
-                s.hyp_normalized = els.inputHypNorm.value;
-                s.sentence_checked = els.checkedText.value;
-
-                // Save to local storage
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    samples: samples,
-                    currentIndex: currentIndex,
-                    date: new Date().toISOString()
-                }));
-            }
-
-            function goToNext() {
-                saveCurrent();
-                if (currentIndex < samples.length - 1) {
-                    currentIndex++;
-                    loadSample();
-                }
-            }
-
-            function goToPrev() {
-                saveCurrent();
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    loadSample();
-                }
-            }
-
-            // --- EVENT HANDLERS ---
-
-            // Live update of WER when typing in Norm fields
-            els.inputRefNorm.addEventListener('input', updateCalculations);
-            els.inputHypNorm.addEventListener('input', updateCalculations);
-
-            // Auto-save Checked Text
-            els.checkedText.addEventListener('input', () => {
-                samples[currentIndex].sentence_checked = els.checkedText.value;
-                updateStats();
-            });
-
-            // Buttons
-            els.nextBtn.onclick = goToNext;
-            els.prevBtn.onclick = goToPrev;
-            els.saveBtn.onclick = () => { saveCurrent(); alert('Saved!'); };
-
-            els.pickOriginalBtn.onclick = () => {
-                els.checkedText.value = els.inputRefRaw.value;
-                els.checkedText.focus();
-                saveCurrent(); // Save immediately so status updates
-                updateStats();
-            };
-
-            els.pickHypBtn.onclick = () => {
-                els.checkedText.value = els.inputHypRaw.value;
-                els.checkedText.focus();
-                saveCurrent();
-                updateStats();
-            };
-
-            els.exportBtn.onclick = () => {
-                saveCurrent();
-                exportCSV();
-            };
-
-            // Keyboard Shortcuts
-            document.addEventListener('keydown', (e) => {
-                // Alt+1: Pick Original
-                if (e.altKey && e.key === '1') {
-                    e.preventDefault();
-                    els.pickOriginalBtn.click();
-                }
-                // Alt+2: Pick Predicted
-                if (e.altKey && e.key === '2') {
-                    e.preventDefault();
-                    els.pickHypBtn.click();
-                }
-                // Ctrl+ArrowRight
-                if (e.ctrlKey && e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    goToNext();
-                }
-                // Ctrl+ArrowLeft
-                if (e.ctrlKey && e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    goToPrev();
-                }
-                // Ctrl+S
-                if (e.ctrlKey && e.key === 's') {
-                    e.preventDefault();
-                    saveCurrent();
-                }
-                // Space for Audio (prevent scrolling)
-                if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
-                    e.preventDefault();
-                    els.audioPlayer.paused ? els.audioPlayer.play() : els.audioPlayer.pause();
-                }
-            });
-
-            // --- UTILS ---
-
-            function updateStats() {
-                const total = samples.length;
-                const done = samples.filter(s => s.sentence_checked && s.sentence_checked.trim().length > 0).length;
-
-                els.progressFill.style.width = `${((currentIndex + 1) / total) * 100}%`;
-                els.progressText.textContent = `${currentIndex + 1} / ${total}`;
-
-                els.checkedCount.textContent = done;
-                els.remainingCount.textContent = total - done;
-            }
-
-            function parseCSV(text) {
-                const lines = text.trim().split('\n');
-                const headers = lines[0].split(',').map(h => h.trim());
-                const data = [];
-
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
-                    // Simple quote-aware CSV parser
-                    const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-                    // Better regex fallback or simple split if no quotes
-                    let rowData = [];
-                    let inQuote = false;
-                    let token = '';
-                    for (let char of lines[i]) {
-                        if (char === '"') { inQuote = !inQuote; continue; }
-                        if (char === ',' && !inQuote) { rowData.push(token); token = ''; continue; }
-                        token += char;
-                    }
-                    rowData.push(token);
-
-                    let obj = {};
-                    headers.forEach((h, idx) => obj[h] = rowData[idx] ? rowData[idx].trim() : '');
-                    data.push(obj);
-                }
-                return data;
-            }
-
-            function exportCSV() {
-                const headers = Object.keys(samples[0]);
-                let csv = headers.join(',') + '\n';
-
+                // Init fields if missing
                 samples.forEach(s => {
-                    const row = headers.map(h => {
-                        let val = String(s[h] || '');
-                        if (val.includes(',') || val.includes('\n') || val.includes('"')) {
-                            val = `"${val.replace(/"/g, '""')}"`;
-                        }
-                        return val;
-                    });
-                    csv += row.join(',') + '\n';
+                    if (!s.sentence_checked) s.sentence_checked = '';
+                    // Ensure norms exist
+                    if (!s.ref_normalized) s.ref_normalized = '';
+                    if (!s.hyp_normalized) s.hyp_normalized = '';
                 });
 
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'asr_checked_export.csv';
-                a.click();
+                startSession(0);
+            } catch (e) {
+                alert('Error: ' + e.message);
             }
         });
-    </script>
+
+        els.continueBtn.addEventListener('click', () => {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            samples = saved.samples;
+            startSession(saved.currentIndex);
+        });
+
+        function startSession(index) {
+            currentIndex = index;
+            els.loadSection.style.display = 'none';
+            els.checkerSection.style.display = 'block';
+            loadSample();
+        }
+
+        // --- CORE LOGIC ---
+
+        function loadSample() {
+            const s = samples[currentIndex];
+
+            // Metadata
+            els.sampleId.textContent = s.id;
+            els.audioPath.textContent = s.path_wav;
+
+            // Audio
+            const filename = s.path_wav.split(/[\/\\]/).pop();
+            if (audioFiles.has(filename)) {
+                els.audioPlayer.src = URL.createObjectURL(audioFiles.get(filename));
+            } else {
+                console.warn('Audio missing:', filename);
+            }
+
+            // Inputs
+            els.inputRefRaw.value = s.sentence || '';
+            els.inputRefNorm.value = s.ref_normalized || '';
+            els.inputHypRaw.value = s.predicted_sentence || '';
+            els.inputHypNorm.value = s.hyp_normalized || '';
+            els.checkedText.value = s.sentence_checked || '';
+
+            updateCalculations();
+            updateStats();
+        }
+
+        function updateCalculations() {
+            const ref = els.inputRefNorm.value;
+            const hyp = els.inputHypNorm.value;
+
+            const diff = calculateDiff(ref, hyp);
+
+            // Update WER display
+            const wer = calculateWER(diff.ops, diff.refLen);
+            els.liveWer.textContent = (wer * 100).toFixed(2) + '%';
+
+            // Render Diff
+            renderDiffHTML(diff.ops);
+        }
+
+        // --- DIFF ALGORITHM (Levenshtein Backtracking) ---
+        function calculateDiff(refStr, hypStr) {
+            // Tokenize simple (split by space, remove empty)
+            const r = refStr.trim().split(/\s+/).filter(x => x);
+            const h = hypStr.trim().split(/\s+/).filter(x => x);
+
+            const n = r.length;
+            const m = h.length;
+
+            // Matrix: dp[i][j]
+            const dp = Array(n + 1).fill().map(() => Array(m + 1).fill(0));
+
+            for (let i = 0; i <= n; i++) dp[i][0] = i;
+            for (let j = 0; j <= m; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= n; i++) {
+                for (let j = 1; j <= m; j++) {
+                    if (r[i - 1] === h[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                    } else {
+                        dp[i][j] = Math.min(
+                            dp[i - 1][j] + 1,   // Deletion
+                            dp[i][j - 1] + 1,   // Insertion
+                            dp[i - 1][j - 1] + 1  // Substitution
+                        );
+                    }
+                }
+            }
+
+            // Backtrack
+            let i = n, j = m;
+            const ops = [];
+
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && r[i - 1] === h[j - 1]) {
+                    ops.push({type: 'match', val: r[i - 1]});
+                    i--;
+                    j--;
+                } else if (j > 0 && (i === 0 || dp[i][j] === dp[i][j - 1] + 1)) {
+                    ops.push({type: 'ins', val: h[j - 1]});
+                    j--;
+                } else if (i > 0 && (j === 0 || dp[i][j] === dp[i - 1][j] + 1)) {
+                    ops.push({type: 'del', val: r[i - 1]});
+                    i--;
+                } else {
+                    ops.push({type: 'sub', ref: r[i - 1], hyp: h[j - 1]});
+                    i--;
+                    j--;
+                }
+            }
+
+            return {ops: ops.reverse(), refLen: n};
+        }
+
+        function calculateWER(ops, refLen) {
+            if (refLen === 0) return 0;
+            let errors = 0;
+            ops.forEach(op => {
+                if (op.type !== 'match') errors++;
+            });
+            return errors / refLen;
+        }
+
+        function renderDiffHTML(ops) {
+            const html = ops.map(op => {
+                if (op.type === 'match') return `<span>${op.val}</span>`;
+                if (op.type === 'del') return `<span class="d-del">${op.val}</span>`;
+                if (op.type === 'ins') return `<span class="d-ins">${op.val}</span>`;
+                if (op.type === 'sub') return `<span class="d-sub" data-orig="${op.ref}">${op.hyp}</span>`;
+            }).join(' ');
+            els.diffView.innerHTML = html;
+        }
+
+        // --- ACTIONS ---
+
+        function saveCurrent() {
+            const s = samples[currentIndex];
+            s.sentence = els.inputRefRaw.value;
+            s.predicted_sentence = els.inputHypRaw.value;
+            s.ref_normalized = els.inputRefNorm.value;
+            s.hyp_normalized = els.inputHypNorm.value;
+            s.sentence_checked = els.checkedText.value;
+
+            // Save to local storage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                samples: samples,
+                currentIndex: currentIndex,
+                date: new Date().toISOString()
+            }));
+        }
+
+        function goToNext() {
+            saveCurrent();
+            if (currentIndex < samples.length - 1) {
+                currentIndex++;
+                loadSample();
+            }
+        }
+
+        function goToPrev() {
+            saveCurrent();
+            if (currentIndex > 0) {
+                currentIndex--;
+                loadSample();
+            }
+        }
+
+        // --- EVENT HANDLERS ---
+
+        // Live update of WER when typing in Norm fields
+        els.inputRefNorm.addEventListener('input', updateCalculations);
+        els.inputHypNorm.addEventListener('input', updateCalculations);
+
+        // Auto-save Checked Text
+        els.checkedText.addEventListener('input', () => {
+            samples[currentIndex].sentence_checked = els.checkedText.value;
+            updateStats();
+        });
+
+        // Buttons
+        els.nextBtn.onclick = goToNext;
+        els.prevBtn.onclick = goToPrev;
+        els.saveBtn.onclick = () => {
+            saveCurrent();
+            alert('Saved!');
+        };
+
+        els.pickOriginalBtn.onclick = () => {
+            els.checkedText.value = els.inputRefRaw.value;
+            els.checkedText.focus();
+            saveCurrent(); // Save immediately so status updates
+            updateStats();
+        };
+
+        els.pickHypBtn.onclick = () => {
+            els.checkedText.value = els.inputHypRaw.value;
+            els.checkedText.focus();
+            saveCurrent();
+            updateStats();
+        };
+
+        els.exportBtn.onclick = () => {
+            saveCurrent();
+            exportCSV();
+        };
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Alt+1: Pick Original
+            if (e.altKey && e.key === '1') {
+                e.preventDefault();
+                els.pickOriginalBtn.click();
+            }
+            // Alt+2: Pick Predicted
+            if (e.altKey && e.key === '2') {
+                e.preventDefault();
+                els.pickHypBtn.click();
+            }
+            // Ctrl+ArrowRight
+            if (e.ctrlKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                goToNext();
+            }
+            // Ctrl+ArrowLeft
+            if (e.ctrlKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToPrev();
+            }
+            // Ctrl+S
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveCurrent();
+            }
+            // Space for Audio (prevent scrolling)
+            if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                els.audioPlayer.paused ? els.audioPlayer.play() : els.audioPlayer.pause();
+            }
+        });
+
+        // --- UTILS ---
+
+        function updateStats() {
+            const total = samples.length;
+            const done = samples.filter(s => s.sentence_checked && s.sentence_checked.trim().length > 0).length;
+
+            els.progressFill.style.width = `${((currentIndex + 1) / total) * 100}%`;
+            els.progressText.textContent = `${currentIndex + 1} / ${total}`;
+
+            els.checkedCount.textContent = done;
+            els.remainingCount.textContent = total - done;
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                // Simple quote-aware CSV parser
+                const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+                // Better regex fallback or simple split if no quotes
+                let rowData = [];
+                let inQuote = false;
+                let token = '';
+                for (let char of lines[i]) {
+                    if (char === '"') {
+                        inQuote = !inQuote;
+                        continue;
+                    }
+                    if (char === ',' && !inQuote) {
+                        rowData.push(token);
+                        token = '';
+                        continue;
+                    }
+                    token += char;
+                }
+                rowData.push(token);
+
+                let obj = {};
+                headers.forEach((h, idx) => obj[h] = rowData[idx] ? rowData[idx].trim() : '');
+                data.push(obj);
+            }
+            return data;
+        }
+
+        function exportCSV() {
+            const headers = Object.keys(samples[0]);
+            let csv = headers.join(',') + '\n';
+
+            samples.forEach(s => {
+                const row = headers.map(h => {
+                    let val = String(s[h] || '');
+                    if (val.includes(',') || val.includes('\n') || val.includes('"')) {
+                        val = `"${val.replace(/"/g, '""')}"`;
+                    }
+                    return val;
+                });
+                csv += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'asr_checked_export.csv';
+            a.click();
+        }
+    });
+</script>
 </body>
 
 </html>
