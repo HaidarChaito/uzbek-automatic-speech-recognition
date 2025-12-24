@@ -133,11 +133,15 @@ class NumberToUzbekWord:
 
                 return f"{num1} - {num2}{additional_suffix}"
 
-            # 4. Ordinal numbers: 2-qism
-            ordinal_number_match = re.match(r"(-?\d+)-([a-zA-Z]+)", number_part)
+            # 4. Ordinal numbers: 2-qism, 1,003-kitob
+            ordinal_number_match = re.match(
+                r"(-?(?:\d{1,3}(?:[, ]\d{3})+|\d+))-([a-zA-Z]+)", number_part
+            )
             if ordinal_number_match:
                 number_str = ordinal_number_match.group(1)  # 2
                 suffix = ordinal_number_match.group(2)  # qism
+
+                number_str = self._clean_long_number(number_str)
 
                 number_in_words = self._convert(int(number_str))
                 if number_in_words.lower().endswith("i"):
@@ -151,16 +155,7 @@ class NumberToUzbekWord:
             if re.match(r"-?\d{1,3}(?:[, ]\d{3})+", number_part):
                 # Check if this is European-style decimal (space as thousand separator, comma as decimal)
                 # Pattern: digits + spaces (for thousands) + comma + 1-2 digits
-                european_decimal_match = re.match(
-                    r"^(-?\d{1,3}(?: \d{3})+),(\d{1,2})$", number_part
-                )
-
-                if european_decimal_match:
-                    # European style: "14 245,48" → "14245.48"
-                    cleaned = number_part.replace(" ", "").replace(",", ".")
-                else:
-                    # Standard style with comma/space as thousand separators: "3,000,000" or "3 000 000"
-                    cleaned = number_part.replace(",", "").replace(" ", "")
+                cleaned = self._clean_long_number(number_part)
 
                 # Convert to float or int depending on whether it contains a decimal point
                 number_in_words = self._convert(
@@ -194,7 +189,13 @@ class NumberToUzbekWord:
         # Preprocess to separate alphanumeric combinations
         text = self._preprocess_text(text)
 
-        result = re.sub(pattern, convert_match, text)
+        result = text
+        try:
+            result = re.sub(pattern, convert_match, text)
+        except Exception as err:
+            print(
+                f"While converting '{text}' to number, {type(err).__name__} error occurred: {err}"
+            )
 
         # Ensure assimilation rule: bir + ta = bitta [not birta]
         result = re.sub(r"\bbirta\b", "bitta", result)
@@ -258,7 +259,7 @@ class NumberToUzbekWord:
             + r"(?:-\d+(?:[, ]\d{3})*(?:[.,]\d+)?)?"  # range
         )
 
-        uzbek_cases_regex = r"ning|ni|ga|ka|qa|da|dan|ini"
+        uzbek_cases_regex = r"ning|ini|ni|ga|ka|qa|dan|da"
 
         # Merge "complex_number% + space + cases" → "complex_number%cases"
         # "1,234.56% ga" → "1,234.56%ga", "60% dan" → "60%dan"
@@ -273,6 +274,9 @@ class NumberToUzbekWord:
             r"\1\2",
             text,
         )
+
+        # Merge number + space + cases -> "number+cases"
+        text = re.sub(rf"\b({complex_number}) ?({uzbek_cases_regex})\b", r"\1\2", text)
 
         return text
 
@@ -399,6 +403,20 @@ class NumberToUzbekWord:
         except ValueError as err:
             print(f"Error: Invalid number format: {number_str}\n{err}")
             return math.nan
+
+    def _clean_long_number(self, number_str: str) -> str:
+        european_decimal_match = re.match(
+            r"^(-?\d{1,3}(?: \d{3})+),(\d{1,2})$", number_str
+        )
+
+        if european_decimal_match:
+            # European style: "14 245,48" → "14245.48"
+            cleaned = number_str.replace(" ", "").replace(",", ".")
+        else:
+            # Standard style with comma/space as thousand separators: "3,000,000" or "3 000 000"
+            cleaned = number_str.replace(",", "").replace(" ", "")
+
+        return cleaned
 
 
 # TODO: handle time, roman numbers, phone numbers

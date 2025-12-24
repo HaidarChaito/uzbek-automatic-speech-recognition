@@ -339,6 +339,14 @@ class TestNumberToUzbekWord(unittest.TestCase):
             "10 -15 shouldn't match as range value",
         )
 
+    # def test_normalize_ordinal_range_values(self):
+    #     self.assertEqual(
+    #         self.converter.normalize(
+    #             "17-18-mart kunlari respublika hududlariga qor yog'ishi kutilmoqda."
+    #         ),
+    #         "o'n yetti-o'n sakkizinchi mart kunlari respublika hududlariga qor yog'ishi kutilmoqda.",
+    #     )
+
     def test_normalize_big_range_values(self):
         self.assertEqual(
             self.converter.normalize("Menga 2,000,000-3,000,000 so'm pul kerak."),
@@ -392,6 +400,24 @@ class TestNumberToUzbekWord(unittest.TestCase):
                 "A.Navoiy ko‘chasi, 25-uy va shu ko‘chadagi 41A-uy"
             ),
             "A.Navoiy ko‘chasi, yigirma beshinchi uy va shu ko‘chadagi qirq bir A-uy",
+        )
+
+    def test_normalize_ordinal_big_numbers(self):
+        self.assertEqual(
+            self.converter.normalize("Bu mening 1,003-kitobim."),
+            "Bu mening bir ming uchinchi kitobim.",
+        )
+        self.assertEqual(
+            self.converter.normalize(
+                "Unga 186 168-moddasi to'rtinchi qismi A bandi bilan o'n yil muddatga ozodlikdan mahrum qilish jazosi tayinlandi."
+            ),
+            "Unga bir yuz sakson olti ming bir yuz oltmish sakkizinchi moddasi to'rtinchi qismi A bandi bilan o'n yil muddatga ozodlikdan mahrum qilish jazosi tayinlandi.",
+        )
+        self.assertEqual(
+            self.converter.normalize(
+                "Unga 186,168-moddasi to'rtinchi qismi A bandi bilan o'n yil muddatga ozodlikdan mahrum qilish jazosi tayinlandi."
+            ),
+            "Unga bir yuz sakson olti ming bir yuz oltmish sakkizinchi moddasi to'rtinchi qismi A bandi bilan o'n yil muddatga ozodlikdan mahrum qilish jazosi tayinlandi.",
         )
 
     def test_normalize_big_numbers(self):
@@ -621,6 +647,14 @@ Yillik hisobda taqqoslansa, ikki ming yigirma beshinchi yil yanvar-noyabr oylari
     def test_invalid_number_format(self):
         result = self.converter._convert("abc123xyz")
         self.assertTrue(math.isnan(result))
+
+    def test_large_number_convert_with_cases(self):
+        self.assertEqual(
+            self.converter.normalize(
+                "saylov tarixida birinchi marta 212 000 dan ortiq saylovchilarimiz ishtirok etdi xalqaro, xorijiy davlatlarda ovoz berishda."
+            ),
+            "saylov tarixida birinchi marta ikki yuz o'n ikki mingdan ortiq saylovchilarimiz ishtirok etdi xalqaro, xorijiy davlatlarda ovoz berishda.",
+        )
 
 
 if __name__ == "__main__":
