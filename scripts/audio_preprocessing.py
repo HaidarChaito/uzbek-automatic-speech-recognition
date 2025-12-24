@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -345,14 +346,35 @@ def process_audio_file(
     # Load and resample
     waveform, sr = torchaudio.load(audio_path)
 
+    return _process_waveform(
+        Path(audio_path).name,
+        waveform,
+        sr,
+        target_sr,
+        save_path,
+        normalize,
+        **normalize_kwargs,
+    )
+
+
+def _process_waveform(
+    file_name: str,
+    waveform: torch.Tensor,
+    current_sr: int,
+    target_sr: int = 16_000,
+    save_path: Optional[str] = None,
+    normalize: bool = True,
+    **normalize_kwargs,
+):
+    """Internal helper to handle the transformation logic and stats."""
     # Store original stats
     original_rms_db = calculate_rms_db(waveform)
-    original_duration = waveform.size(1) / sr
+    original_duration = waveform.size(1) / current_sr
 
-    if sr != target_sr:
-        resampler = torchaudio.transforms.Resample(sr, target_sr)
+    if current_sr != target_sr:
+        resampler = torchaudio.transforms.Resample(current_sr, target_sr)
         waveform = resampler(waveform)
-        sr = target_sr
+        current_sr = target_sr
 
     # Convert to mono
     if waveform.size(0) > 1:
@@ -360,15 +382,15 @@ def process_audio_file(
 
     # Apply normalization if requested
     if normalize:
-        waveform = normalize_audio(waveform, sr, **normalize_kwargs)
+        waveform = normalize_audio(waveform, current_sr, **normalize_kwargs)
 
     # Calculate final stats
     final_rms_db = calculate_rms_db(waveform)
-    final_duration = waveform.size(1) / sr
+    final_duration = waveform.size(1) / current_sr
     peak_amplitude = torch.abs(waveform).max().item()
 
     stats = {
-        "input_audio_filename": Path(audio_path).name,
+        "input_audio_filename": file_name,
         "original_rms_db": round(original_rms_db, ndigits=4),
         "final_rms_db": round(final_rms_db, ndigits=4),
         "original_duration": original_duration,
@@ -381,6 +403,24 @@ def process_audio_file(
     # Save if requested
     if save_path:
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-        torchaudio.save(save_path, waveform, sr)
+        torchaudio.save(save_path, waveform, current_sr)
 
     return waveform, stats
+
+
+def process_audio_bytes(
+    file_name: str,
+    audio_bytes: bytes,
+    target_sr: int = 16_000,
+    save_path: Optional[str] = None,
+    normalize: bool = True,
+    **normalize_kwargs,
+) -> Tuple[torch.Tensor, dict]:
+    """Processes audio directly from bytes."""
+    # Use BytesIO to make bytes seekable for torchaudio
+    byte_stream = io.BytesIO(audio_bytes)
+    waveform, sr = torchaudio.load(byte_stream)
+
+    return _process_waveform(
+        file_name, waveform, sr, target_sr, save_path, normalize, **normalize_kwargs
+    )
