@@ -10,7 +10,6 @@ def normalize_text(
     should_normalize_capitalization: bool = True,
     should_lowercase_text: bool = False,
     should_remove_ellipsis=False,
-    normalize_domains: bool = True,
     should_normalize_annotations: bool = True,
     lowercase_annotations: bool = True,
 ) -> str:
@@ -26,12 +25,14 @@ def normalize_text(
     2. Clean bullet points and list markers (e.g. •, -, 1.)
     3. Normalize apostrophe variants to standard ASCII apostrophe (')
     4. Normalize annotation markers (optional)
-    5. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
-    6. Remove punctuations (optional): "!", ",", ".", ";", "?"
-    7. Clean excessive whitespace
-    8. Fix spacing around punctuation
-    9. Normalize capitalization
-    10. Lowercase entire text (optional)
+    5. Clean excessive whitespace
+    6. Normalize uz domains: qalampir.uz -> Qalampir uz
+    7. Fix spacing around punctuations
+    8. Normalize capitalization around ".", "?", "!" (optional)
+    9. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
+    10. Remove punctuations (optional): "!", ",", ".", ";", "?"
+    11. Lowercase entire text (optional)
+    12. Clean excessive whitespace
 
     Args:
         text: Raw transcribed text to normalize
@@ -40,7 +41,6 @@ def normalize_text(
         should_normalize_capitalization: If True, normalize capitalization (e.g. capitalization after punctuations)
         should_lowercase_text: If True, makes entire text to lowercase
         should_remove_ellipsis: If True, removes ellipsis (...) from text [use it with read speeach]
-        normalize_domains: If True, capitalize .uz domain names (e.g., "qalampir.uz" -> "Qalampir uz")
         should_normalize_annotations: If True, normalize annotation brackets: (text), *[text]* -> [text]
         lowercase_annotations: If True, lowercase text within annotations
 
@@ -72,18 +72,20 @@ def normalize_text(
     if should_normalize_annotations:
         text = normalize_annotations(text, lowercase_annotation=lowercase_annotations)
 
+    text = remove_whitespaces(text)
+    text = normalize_uz_domains(text)
+    text = normalize_spacing_around_punc(text)
+    if should_normalize_capitalization:
+        text = normalize_capitalization(text)
+
     text = remove_special_chars(text, remove_ellipsis=should_remove_ellipsis)
     if should_remove_punctuations:
         text = remove_punctuations(text)
 
-    text = remove_whitespaces(text)
-    text = normalize_spacing_around_punc(text)
-
-    if should_normalize_capitalization:
-        text = normalize_capitalization(text, normalize_domains=normalize_domains)
-
     if should_lowercase_text:
         text = text.lower()
+
+    text = remove_whitespaces(text)
 
     return text
 
@@ -238,7 +240,7 @@ def capitalize_after_punc(text: str) -> str:
     )
 
 
-def capitalize_uz_domain(text: str) -> str:
+def normalize_uz_domains(text: str) -> str:
     """Normalize Uzbek website/domain names. Capitalize first letter of domain names (Qalampir uz)"""
     return re.sub(
         r"\b([A-Za-z]+)\.uz\b",
@@ -248,10 +250,8 @@ def capitalize_uz_domain(text: str) -> str:
     )
 
 
-def normalize_capitalization(text: str, normalize_domains=True) -> str:
+def normalize_capitalization(text: str) -> str:
     """Capitalizes first character, after punctuations [. ! ?] and Uzbek domain"""
     text = capitalize_first_character(text)
     text = capitalize_after_punc(text)
-    if normalize_domains:
-        text = capitalize_uz_domain(text)
     return text

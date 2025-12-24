@@ -11,7 +11,7 @@ from scripts.uzbek_text_normalizer import (
     normalize_spacing_around_punc,
     capitalize_first_character,
     capitalize_after_punc,
-    capitalize_uz_domain,
+    normalize_uz_domains,
     normalize_capitalization,
     remove_special_chars,
     remove_punctuations,
@@ -547,43 +547,55 @@ class TestCapitalizeFirstCharacter(unittest.TestCase):
 
 class TestCapitalizeUzDomain(unittest.TestCase):
     def test_capitalizes_uz_domain(self):
-        result = capitalize_uz_domain("qalampir.uz")
+        result = normalize_uz_domains("qalampir.uz")
         self.assertEqual(result, "Qalampir uz")
 
     def test_handles_uppercase_domain(self):
-        result = capitalize_uz_domain("QALAMPIR.UZ")
+        result = normalize_uz_domains("QALAMPIR.UZ")
         self.assertEqual(result, "Qalampir uz")
 
     def test_no_uz_domain_returns_original(self):
-        self.assertEqual(capitalize_uz_domain("hello world"), "hello world")
+        self.assertEqual(normalize_uz_domains("hello world"), "hello world")
 
     def test_mixed_case_domain(self):
-        result = capitalize_uz_domain("QaLaMpIr.uz")
+        result = normalize_uz_domains("QaLaMpIr.uz")
         self.assertEqual(result, "Qalampir uz")
 
 
 class TestNormalizeCapitalization(unittest.TestCase):
     def test_capitalizes_first_character(self):
-        result = normalize_capitalization("hello world", normalize_domains=False)
+        result = normalize_capitalization("hello world")
         self.assertEqual(result, "Hello world")
 
-    def test_with_uz_domain_normalization(self):
-        result = normalize_capitalization("qalampir.uz sayti", normalize_domains=True)
-        self.assertEqual(result, "Qalampir uz sayti")
-
-    def test_without_uz_domain_normalization(self):
-        result = normalize_capitalization("qalampir.com sayti", normalize_domains=False)
-        self.assertEqual(result, "Qalampir.com sayti")
-
     def test_empty_string(self):
-        result = normalize_capitalization("", normalize_domains=False)
+        result = normalize_capitalization("")
         self.assertEqual(result, "")
 
     def test_capitalization_after_comma_should_not_change(self):
-        result = normalize_capitalization(
-            "– Tur, Mansur ketamiz.", normalize_domains=True
-        )
+        result = normalize_capitalization("– Tur, Mansur ketamiz.")
         self.assertEqual(result, "– Tur, Mansur ketamiz.")
+
+
+class TestNormalizeUzDomains(unittest.TestCase):
+    def test_with_uz_domain_normalization(self):
+        result = normalize_uz_domains("qalampir.uz sayti")
+        self.assertEqual(result, "Qalampir uz sayti")
+
+        result = normalize_uz_domains("Qalampir.uz sayti")
+        self.assertEqual(result, "Qalampir uz sayti")
+
+        result = normalize_uz_domains("Muzaffar Komilov kun.uz bilan suhbatda aynan")
+        self.assertEqual(result, "Muzaffar Komilov Kun uz bilan suhbatda aynan")
+
+    def test_without_uz_domain_normalization(self):
+        result = normalize_uz_domains("qalampir.com sayti")
+        self.assertEqual(result, "qalampir.com sayti")
+
+        result = normalize_uz_domains("qalampir. uz sayti")
+        self.assertEqual(result, "qalampir. uz sayti")
+
+        result = normalize_uz_domains("qalampir  .uz sayti")
+        self.assertEqual(result, "qalampir  .uz sayti")
 
 
 class TestIntegration(unittest.TestCase):
@@ -604,11 +616,12 @@ class TestIntegration(unittest.TestCase):
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
+        text = normalize_uz_domains(text)
+        text = normalize_spacing_around_punc(text)
         text = remove_special_chars(text, remove_ellipsis=True)
         text = remove_punctuations(text)
-        text = remove_whitespaces(text)
-        text = normalize_spacing_around_punc(text)
         text = text.lower()
+        text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
@@ -617,7 +630,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_case_sensitive_asr_normalization_pipeline(self):
         text = """
-        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan. 19-avgust
+        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning kun.uz fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan. 19-avgust
 
         Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish  ishlariga boshqa mas’ullar bilan < birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
@@ -629,14 +642,16 @@ class TestIntegration(unittest.TestCase):
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
-        text = remove_special_chars(text)
         text = remove_whitespaces(text)
+        text = normalize_uz_domains(text)
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
+        text = remove_special_chars(text)
+        text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
-            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. O'n to'qqizinchi avgust Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
+            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning Kun uz fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. O'n to'qqizinchi avgust Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
         )
 
     def test_case_extended_number_normalization_pipeline(self):
@@ -657,10 +672,12 @@ class TestIntegration(unittest.TestCase):
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
         text = normalize_annotations(text)
-        text = remove_special_chars(text)
         text = remove_whitespaces(text)
+        text = normalize_uz_domains(text)
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
+        text = remove_special_chars(text)
+        text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
@@ -674,11 +691,12 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = remove_list_markers(text)
         text = normalize_uzbek_apostrophes(text)
-        text = remove_special_chars(text, remove_ellipsis=True)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
         text = normalize_capitalization(text)
+        text = remove_special_chars(text, remove_ellipsis=True)
+        text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
