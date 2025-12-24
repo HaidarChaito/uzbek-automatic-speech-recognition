@@ -429,7 +429,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>ASR Tool v2.1</h1>
+        <h1>ASR Tool</h1>
         <div class="progress-section">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
@@ -440,6 +440,7 @@
 
     <div class="load-section" id="loadSection">
         <h2>Start Session</h2>
+        <!--TODO: Make sure to match these columns-->
         <label>1. Expected CSV File (with columns: id, path_wav, sentence, predicted_sentence, ref_normalized,
             hyp_normalized)</label>
         <input type="file" id="csvFile" accept=".csv" class="file-input">
@@ -604,6 +605,16 @@
             remainingCount: document.getElementById('remainingCount')
         };
 
+        // --- PREVENT ACCIDENTAL CLOSE ---
+        window.addEventListener('beforeunload', (e) => {
+            // Only ask to confirm if data is actively loaded
+            if (samples.length > 0) {
+                e.preventDefault();
+                // Standard for Chrome/Firefox/Edge (they display generic message)
+                e.returnValue = '';
+            }
+        });
+
         // --- INITIALIZATION ---
         if (localStorage.getItem(STORAGE_KEY)) {
             els.continueBtn.classList.remove('hidden');
@@ -649,6 +660,7 @@
         }
 
         // --- CORE LOGIC ---
+        // TODO: Change column names here
         function loadSample() {
             const s = samples[currentIndex];
             els.sampleId.textContent = s.id;
