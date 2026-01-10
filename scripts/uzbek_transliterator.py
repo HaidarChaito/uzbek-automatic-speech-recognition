@@ -2,6 +2,8 @@ import math
 import re
 from typing import AnyStr
 
+from scripts.uzbek_text_normalizer import normalize_uzbek_apostrophes
+
 
 def _get_word_from_char_position(text, current_char_at):
     # Find the start of the word
@@ -365,8 +367,6 @@ def to_latin(cyrillic_text, normalize_apostrophes=False):
         return ""
     cyrillic_text = str(cyrillic_text)
 
-    # TODO: Normalize apostrophe
-
     text = _to_latin_pre_processing(cyrillic_text)
 
     vowels = "аоиуўэёюяеАОИУЎЭЁЮЯЕ"
@@ -473,5 +473,8 @@ def to_latin(cyrillic_text, normalize_apostrophes=False):
             result.append(char)
 
     latin_text = "".join(result)
+
+    if normalize_apostrophes:
+        latin_text = normalize_uzbek_apostrophes(latin_text)
 
     return latin_text

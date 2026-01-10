@@ -641,6 +641,15 @@ class TestToLatin(unittest.TestCase):
         # ь is usually ignored in Uzbek Latin
         self.assertEqual(to_latin("альбом"), "albom")
 
+    def test_normalize_uzbek_apostrophes(self):
+        self.assertEqual(
+            to_latin(
+                "Фаластин муаммоси бўйича консенсус мавжуд: фаластинликлар йўқ бўлиши керак. ҒАРБИЙ СОҲИЛ. Мусулмонлар Иброҳим, Исъҳоқ ва Яъқубни пайғамбар деб улуғлайдилар.",
+                normalize_apostrophes=True,
+            ),
+            "Falastin muammosi bo'yicha konsensus mavjud: falastinliklar yo'q bo'lishi kerak. G'ARBIY SOHIL. Musulmonlar Ibrohim, Is'hoq va Ya'qubni payg'ambar deb ulug'laydilar.",
+        )
+
     def test_in_long_text(self):
         text = """
 Мисрда инқилоб, ундан кейин эса аксилинқилоб юз берди, Сурия уруш
