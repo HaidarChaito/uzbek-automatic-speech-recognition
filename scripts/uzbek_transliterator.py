@@ -1,3 +1,4 @@
+import math
 import re
 from typing import AnyStr
 
@@ -219,6 +220,96 @@ def _to_latin_handle_в_and_илламоқ_combination(cyrillic_text):
     return re.sub(pattern, replace_keep_case, cyrillic_text)
 
 
+def _to_latin_handle_even_words(cyrillic_text):
+    pattern = re.compile(
+        r"\b(чўлу биёбон|ору номус|кайфу сафо|шону шуҳрат|чангу ғубор|яхшию ёмонни|еру осмон|еру кўк|меҳнату машаққат|туну кун|кечаю кундуз|ёшу қари|дўсту душман|яккаю ягона)[а-яёқғҳў]*\b",
+        flags=re.IGNORECASE,
+    )
+
+    def replace_keep_case(match):
+        matched_str = match.group(0)
+        words = matched_str.split()
+        if len(words) != 2:
+            print(
+                f"Warning: failed to pre-process Cyrillic even word: {matched_str}. Expected number of space is 2 but got {len(words)}."
+            )
+            return matched_str
+
+        # "еру осмон" -> "ер-у осмон"
+        first_word = words[0]
+        hyphenated_first_word = first_word[:-1] + "-" + first_word[-1]
+        return hyphenated_first_word + " " + words[1]
+
+    return re.sub(pattern, replace_keep_case, cyrillic_text)
+
+
+def _to_latin_handle_even_words_not_hyphenated(cyrillic_text):
+    # Hyphenated '...дан-...га' words, e.g. йилдан-йилга -> йилдан йилга
+    pattern = re.compile(
+        r"\b([а-яёқғҳў]+дан)-([а-яёқғҳў]+га)\b",
+        flags=re.IGNORECASE,
+    )
+    cyrillic_text = re.sub(pattern, r"\1 \2", cyrillic_text)
+
+    pattern = re.compile(
+        r"\b(у ёқдан-бу ёққа|кўпдан-кўп|кундан-кун|тўғридан-тўғри|узундан-узоқ|узундан-узун|очиқдан-очиқ|қизигандан-қизиди|камдан-кам|текиндан-текин|йангидан-янги)\b",
+        flags=re.IGNORECASE,
+    )
+
+    def replace_keep_case(match):
+        matched_str = match.group(0)
+        words = matched_str.split("-")
+        if len(words) != 2:
+            print(
+                f"Warning: failed to pre-process Cyrillic even word: {matched_str}. Expected number of space is 2 but got {len(words)}."
+            )
+            return matched_str
+
+        # кундан-кун -> кундан кун
+        return f"{words[0]} {words[1]}"
+
+    return re.sub(pattern, replace_keep_case, cyrillic_text)
+
+
+def _to_latin_handle_foreign_words(cyrillic_text):
+    # foreign word stem + 'и' -> foreign word stem + 'йи'
+    # e.g. таржимаи ҳол -> tarjimayi hol: таржима + и => таржима + йи
+    foreign_word_stems = [
+        "нуқта",
+        "таржима",
+        "ойна",
+        "бало",
+        "адо",
+        "аъзо",
+        "расво",
+        "дуо",
+        "бало",
+        "парво",
+        "бухоро",
+        "худо",
+        "қазо",
+        "авзо",
+        "саҳро",
+        "фидо",
+    ]
+
+    pattern = re.compile(
+        rf"\b({"|".join(foreign_word_stems)})(и)\b",
+        flags=re.IGNORECASE,
+    )
+
+    def replace_keep_case(match):
+        stem = match.group(1)  # "Таржима"
+        suffix = match.group(2)  # "и"
+
+        # Determine if we should use 'й' or 'Й' based on the suffix's case
+        replacement_char = "й" if suffix.islower() else "Й"
+
+        return stem + replacement_char + suffix
+
+    return re.sub(pattern, replace_keep_case, cyrillic_text)
+
+
 def _to_latin_pre_processing(cyrillic_text):
     """
     Applies grammatical and orthographic normalization rules to Cyrillic text
@@ -236,9 +327,26 @@ def _to_latin_pre_processing(cyrillic_text):
     # Example: In Cyrillic - боғ + га = боққа, in Latin it should be bog‘ga
     cyrillic_text = _to_latin_handle_ғ_to_қ_assimilation(cyrillic_text)
 
-    # --- Rule 12: Words ending with 'в' + -илламоқ = vullamoq (in Latin) ---
+    # --- Rule 12: Words ending with 'в' + -илламоқ = -vullamoq (in Latin) ---
     # Example: In Cyrillic - шов + илламоқ = шовилламоқ, in Latin it should be shovullamoq
     cyrillic_text = _to_latin_handle_в_and_илламоқ_combination(cyrillic_text)
+
+    # --- Rule 14: Even words are hyphenated in Latin ---
+    # Example: In Cyrillic - 'еру осмон', in Latin it should be yer-u osmon
+    cyrillic_text = _to_latin_handle_even_words(cyrillic_text)
+
+    # --- Rule 15: Two words not hyphenated in Latin (first word + dan, second word + ga and some others) ---
+    # Example: In Cyrillic - 'йилдан-йилга', 'бекордан-бекорга', in Latin it should be yildan yilga, bekordan-bekorga
+    # Shuningdek, belgining ortiq darajasini bildiruvchi yangidan yangi, ochiqdan ochiq kabilar ajratib (chiziqchasiz) yoziladi.
+    cyrillic_text = _to_latin_handle_even_words_not_hyphenated(cyrillic_text)
+
+    # --- Rule 16: Izofali so'zlar unli bilan tugasa (таржимаи ҳол -> tarjimayi hol) ---
+    # Izofa undosh bilan tugasa - 'дарди бедаво' -> 'dardi bedavo' kiril va lotinda o'zgarishsiz qoladi
+    # Izofa unli bilan tugasa - 'адои тамом' -> 'adoyi tamom' - lotinda izofaga -yi qo'shimchasi qo'shiladi
+    cyrillic_text = _to_latin_handle_foreign_words(cyrillic_text)
+
+    # --- Rule 17: Fonetik yozuv -> morfologik yozuv (эрталабки -> ertalabgi). Ignored this rule (seems incorrect or no one is following) ---
+
     return cyrillic_text
 
 
@@ -248,7 +356,16 @@ def to_latin(cyrillic_text, normalize_apostrophes=False):
 
     Handles common conversion nuances based on
     https://doi.org/10.5281/zenodo.7467371 (Yunus Jummayevich Davidov, 2022)
+
+    Ignored rules: 13 and 17
     """
+    # Check for NaN or empty string safely
+    is_nan = isinstance(cyrillic_text, float) and math.isnan(cyrillic_text)
+    if cyrillic_text is None or is_nan or str(cyrillic_text).strip() == "":
+        return ""
+    cyrillic_text = str(cyrillic_text)
+
+    # TODO: Normalize apostrophe
 
     text = _to_latin_pre_processing(cyrillic_text)
 

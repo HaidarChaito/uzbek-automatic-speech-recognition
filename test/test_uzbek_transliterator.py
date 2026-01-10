@@ -2,9 +2,17 @@ import unittest
 
 from scripts.uzbek_transliterator import to_latin
 
+"""
+Tests common conversion nuances based on
+https://doi.org/10.5281/zenodo.7467371 (Yunus Jummayevich Davidov, 2022)
 
-# Some texts are adopted from the book "FALASTIN: Agar o‘lishim lоzim bo‘lsa…"
-# Credits to author: Nadеjda Kеvоrkоva and translator: Hamid Sodiq
+Some texts are adopted from the book "FALASTIN: Agar o‘lishim lоzim bo‘lsa…"
+Credits to author: Nadеjda Kеvоrkоva and translator: Hamid Sodiq
+
+Ignored rules: 13 and 17
+"""
+
+
 class TestToLatin(unittest.TestCase):
 
     def test_basic_mapping(self):
@@ -478,6 +486,136 @@ class TestToLatin(unittest.TestCase):
         self.assertEqual(
             to_latin("ота-оналарининг виллалари"), "ota-onalarining villalari"
         )
+
+    # --- Rule 13: Exceptional writing in very rare words (e.g. минг боши -> mingboshi). Ignored this rule ---
+
+    # --- Rule 14: Even words hyphenated (juft so'zlar chiziqcha bilan) ---
+    def test_rule_even_words_hyphenated(self):
+        self.assertEqual(to_latin("чўлу биёбон"), "cho‘l-u biyobon")
+        self.assertEqual(to_latin("ору номус"), "or-u nomus")
+        self.assertEqual(to_latin("кайфу сафо"), "kayf-u safo")
+        self.assertEqual(to_latin("шону шуҳрат"), "shon-u shuhrat")
+        self.assertEqual(to_latin("чангу ғубор"), "chang-u g‘ubor")
+        self.assertEqual(to_latin("яхшию ёмонни"), "yaxshi-yu yomonni")
+        self.assertEqual(to_latin("еру осмон"), "yer-u osmon")
+        self.assertEqual(
+            to_latin("Йирик-йирик томчилар еру кўкни савалай кетди."),
+            "Yirik-yirik tomchilar yer-u ko‘kni savalay ketdi.",
+        )
+        self.assertEqual(to_latin("меҳнату машаққат"), "mehnat-u mashaqqat")
+        self.assertEqual(to_latin("туну кун"), "tun-u kun")
+        self.assertEqual(to_latin("кечаю кундуз"), "kecha-yu kunduz")
+        self.assertEqual(
+            to_latin("Ёлғон гапга ишонманг, эрта-ю кеч даладаман."),
+            "Yolg‘on gapga ishonmang, erta-yu kech daladaman.",
+        )
+        self.assertEqual(to_latin("ёшу қари"), "yosh-u qari")
+        self.assertEqual(to_latin("дўсту душман"), "do‘st-u dushman")
+        self.assertEqual(to_latin("яккаю ягона"), "yakka-yu yagona")
+        self.assertEqual(
+            to_latin(
+                "Шундай экан ҳаёт, меҳнат-у машаққат билан тун-у кун ишлайсанда, кетидан дакки ҳам эшитасан."
+            ),
+            "Shunday ekan hayot, mehnat-u mashaqqat bilan tun-u kun ishlaysanda, ketidan dakki ham eshitasan.",
+        )
+
+    # --- Rule 15: Two words not hyphenated (first word + dan, second word + ga and some others) ---
+    def test_rule_two_words_not_hyphenated(self):
+        self.assertEqual(to_latin("у ёқдан-бу ёққа"), "u yoqdan bu yoqqa")
+        self.assertEqual(to_latin("йилдан-йилга"), "yildan yilga")
+        self.assertEqual(to_latin("наслдан-наслга"), "nasldan naslga")
+        self.assertEqual(to_latin("бекордан-бекорга"), "bekordan bekorga")
+        self.assertEqual(to_latin("кундан-кунга"), "kundan kunga")
+        self.assertEqual(
+            to_latin("йилдан-йилгача"), "yildan-yilgacha", "Do not capture"
+        )
+        self.assertEqual(
+            to_latin("йилдан йилгача"), "yildan yilgacha", "Do not capture"
+        )
+        self.assertEqual(to_latin("йилдан йилга"), "yildan yilga", "Do not capture")
+        self.assertEqual(
+            to_latin(
+                "У наслдан-наслга ўтган, чунки барча оилавий муносабатлар шариат томонидан тартибга солинган."
+            ),
+            "U nasldan naslga o‘tgan, chunki barcha oilaviy munosabatlar shariat tomonidan tartibga solingan.",
+        )
+        self.assertEqual(
+            to_latin(
+                "Мен пештахтадан-пештахтага ўтарканман, ҳар бир сотувчи олдимга отланади, гўё менинг сиймомда Санта-Клаусни кўраётгандек."
+            ),
+            "Men peshtaxtadan peshtaxtaga o‘tarkanman, har bir sotuvchi oldimga otlanadi, go‘yo mening siymomda Santa-Klausni ko‘rayotgandek.",
+        )
+        self.assertEqual(to_latin("кўпдан-кўп"), "ko‘pdan ko‘p")
+        self.assertEqual(to_latin("кундан-кун"), "kundan kun")
+        self.assertEqual(to_latin("тўғридан-тўғри"), "to‘g‘ridan to‘g‘ri")
+        self.assertEqual(to_latin("узундан-узоқ"), "uzundan uzoq")
+        self.assertEqual(to_latin("узундан-узун"), "uzundan uzun")
+        self.assertEqual(to_latin("очиқдан-очиқ"), "ochiqdan ochiq")
+        self.assertEqual(to_latin("қизигандан-қизиди"), "qizigandan qizidi")
+        self.assertEqual(
+            to_latin("қизигандан-қизидилар"), "qizigandan-qizidilar", "Do not capture"
+        )
+        self.assertEqual(to_latin("камдан-кам"), "kamdan kam")
+        self.assertEqual(
+            to_latin(
+                "урушлар, қўзғолонлар, тозалашлар пайтида ўз уйини тарк этган ҳар бир фаластинлик, камдан-кам ҳолатларни ҳисобга олмаганда, ўз уйига қайтиб кела олмайди."
+            ),
+            "urushlar, qo‘zg‘olonlar, tozalashlar paytida o‘z uyini tark etgan har bir falastinlik, kamdan kam holatlarni hisobga olmaganda, o‘z uyiga qaytib kela olmaydi.",
+        )
+
+    # --- Rule 16: Izofali so'zlar ---
+    # izofa undosh bilan tugagan soʻzlarga -i shaklida (dardi bedavo),
+    # unli bilan tugagan soʻzlarga esa -yi shaklida qoʻshiladi (nuqtayi nazar)
+    def test_rule_foreign_words(self):
+        # Credits: Orif Tolib | source: https://oriftolib.uz/izofali-birikmalar-imlosi/
+        # No difference with consonant ending
+        self.assertEqual(to_latin("дарди бедаво"), "dardi bedavo")
+        self.assertEqual(to_latin("ошиқи беқарор"), "oshiqi beqaror")
+        self.assertEqual(to_latin("шаҳри азим"), "shahri azim")
+
+        # There's difference with vowel ending
+        self.assertEqual(to_latin("нуқтаи назар"), "nuqtayi nazar")
+        self.assertEqual(to_latin("таржимаи ҳол"), "tarjimayi hol")
+        self.assertEqual(to_latin("ойнаи жаҳон"), "oynayi jahon")
+        self.assertEqual(to_latin("балои нафс"), "baloyi nafs")
+        self.assertEqual(to_latin("балои азим"), "baloyi azim")
+        self.assertEqual(to_latin("адои тамом"), "adoyi tamom")
+        self.assertEqual(to_latin("аъзои бадан"), "a’zoyi badan")
+        self.assertEqual(to_latin("расвои жаҳон"), "rasvoyi jahon")
+        self.assertEqual(to_latin("дуои жон"), "duoyi jon")
+        self.assertEqual(to_latin("дуои бад"), "duoyi bad")
+        self.assertEqual(to_latin("балои қазо"), "baloyi qazo")
+        self.assertEqual(to_latin("парвои палак"), "parvoyi palak")
+        self.assertEqual(to_latin("Бухорои шариф"), "Buxoroyi sharif")
+        self.assertEqual(to_latin("Худои таоло"), "Xudoyi taolo")
+        self.assertEqual(to_latin("қазои"), "qazoyi")
+        self.assertEqual(to_latin("авзои"), "avzoyi")
+        self.assertEqual(to_latin("саҳрои"), "sahroyi")
+        self.assertEqual(to_latin("фидои"), "fidoyi")
+        self.assertEqual(
+            to_latin("Қариб, адои тамом бўпти."), "Qarib, adoyi tamom bo‘pti."
+        )
+        self.assertEqual(
+            to_latin(
+                "Адиб «Машаққатли сафар» номли таржимаи ҳолида ота-онасини қандай хотирлайди?"
+            ),
+            "Adib «Mashaqqatli safar» nomli tarjimayi holida ota-onasini qanday xotirlaydi?",
+        )
+        self.assertEqual(
+            to_latin(
+                "Бу ерда эса, қазои қадарда бор экан, иккинчи кўзимдан ҳам айрилдим."
+            ),
+            "Bu yerda esa, qazoyi qadarda bor ekan, ikkinchi ko‘zimdan ham ayrildim.",
+        )
+        self.assertEqual(
+            to_latin("Таржимаи ҳол, адои тамом, нуқтаи назар, расвои жаҳон, дуои бад"),
+            "Tarjimayi hol, adoyi tamom, nuqtayi nazar, rasvoyi jahon, duoyi bad",
+        )
+
+        self.assertEqual(to_latin("ДУОИ БАД"), "DUOYI BAD")
+        self.assertEqual(to_latin("дуОИ Бад"), "duOYI Bad")
+
+    # --- Rule 17: Fonetik yozuv -> morfologik yozuv (эрталабки -> ertalabgi). Ignored this rule (seems incorrect or no one is following) ---
 
     def test_capitalization_logic(self):
         self.assertEqual(to_latin("Салом"), "Salom")
