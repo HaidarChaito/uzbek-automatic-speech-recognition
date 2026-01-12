@@ -92,14 +92,14 @@ def transcribe_with_retry(audio_path: str, region: str = "eu"):
 
 
 def transcribe_batch_parallel(
-    audio_paths: List[str], regions: List[str] = ["eu", "us"], max_workers: int = 2
+    audio_paths: List[str], regions: List[str] = ["eu", "us"], max_workers: int = 10
 ) -> List[Dict[str, Any]]:
     """Transcribes multiple audio files in parallel using multiple regions.
 
     Args:
         audio_paths: List of paths to audio files
         regions: List of regions to distribute work across (default: ["eu", "us"] - seems only these are available)
-        max_workers: Number of parallel workers (default: 2, recommended: 6, 8, 10 with 2 regions)
+        max_workers: Number of parallel workers (default: 10, recommended: 8, 10, 12 with 2 regions)
             Avoid rate limiter - 300 request per minute per region
             Learn more: https://docs.cloud.google.com/speech-to-text/docs/quotas
 
