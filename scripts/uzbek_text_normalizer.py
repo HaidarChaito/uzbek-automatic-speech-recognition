@@ -54,11 +54,7 @@ def normalize_text(
         >>> normalize_text("QALAMPIR.UZ  sayti", normalize_domains=True)
         "Qalampir uz sayti"
     """
-    # Check for NaN or empty string safely
-    is_nan = isinstance(text, float) and math.isnan(text)
-    if text is None or is_nan or str(text).strip() == "":
-        return ""
-    text = str(text)
+    text = _get_safe_string_if_nan(text)
 
     text = remove_new_lines(text)
 
@@ -121,6 +117,8 @@ def remove_list_markers(text: str) -> str:
 
 def normalize_uzbek_apostrophes(text: str) -> str:
     """Normalize all apostrophe variants to straight apostrophe"""
+    text = _get_safe_string_if_nan(text)
+
     apostrophe_variants = [
         "‘",  # U+2018 (left single quotation mark) - common in Uzbek
         "’",  # U+2019 (right single quotation mark) - common in Uzbek
@@ -255,3 +253,12 @@ def normalize_capitalization(text: str) -> str:
     text = capitalize_first_character(text)
     text = capitalize_after_punc(text)
     return text
+
+
+def _get_safe_string_if_nan(text) -> str:
+    # Checks for NaN or empty string safely
+    is_nan = isinstance(text, float) and math.isnan(text)
+    if text is None or is_nan or str(text).strip() == "":
+        return ""
+
+    return str(text)

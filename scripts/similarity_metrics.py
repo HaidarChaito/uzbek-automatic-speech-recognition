@@ -6,28 +6,32 @@ import jiwer
 from scripts.uzbek_text_normalizer import normalize_text
 
 
-def calculate(reference: str, hypothesis: str):
+def calculate(reference: str, hypothesis: str, should_normalize=True):
     """Calculate WER, CER, sequence_similarity metrics between reference and hypothesis texts."""
     reference = _get_safe_string_if_nan(reference)
     hypothesis = _get_safe_string_if_nan(hypothesis)
 
+    ref_normalized = reference
+    hyp_normalized = hypothesis
+
     # Normalize both texts
-    ref_normalized = normalize_text(
-        reference,
-        should_normalize_numbers_to_words=True,
-        should_remove_punctuations=True,
-        should_normalize_capitalization=False,
-        should_lowercase_text=True,
-        should_remove_ellipsis=True,
-    )
-    hyp_normalized = normalize_text(
-        hypothesis,
-        should_normalize_numbers_to_words=True,
-        should_remove_punctuations=True,
-        should_normalize_capitalization=False,
-        should_lowercase_text=True,
-        should_remove_ellipsis=True,
-    )
+    if should_normalize:
+        ref_normalized = normalize_text(
+            reference,
+            should_normalize_numbers_to_words=True,
+            should_remove_punctuations=True,
+            should_normalize_capitalization=False,
+            should_lowercase_text=True,
+            should_remove_ellipsis=True,
+        )
+        hyp_normalized = normalize_text(
+            hypothesis,
+            should_normalize_numbers_to_words=True,
+            should_remove_punctuations=True,
+            should_normalize_capitalization=False,
+            should_lowercase_text=True,
+            should_remove_ellipsis=True,
+        )
 
     # Word Error Rate (WER)
     wer = jiwer.wer(ref_normalized, hyp_normalized)
