@@ -889,33 +889,64 @@
         }
 
         function parseCSV(text) {
-            const lines = text.trim().split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
             const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-                let rowData = [];
-                let inQuote = false;
-                let token = '';
-                for (let char of lines[i]) {
+            let row = [];
+            let field = '';
+            let inQuotes = false;
+
+            // Iterate through every character in the text
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    // Handle escaped quotes (represented as "")
+                    if (char === '"' && nextChar === '"') {
+                        field += '"';
+                        i++; // Skip the next quote
+                    } else if (char === '"') {
+                        // Closing quote
+                        inQuotes = false;
+                    } else {
+                        field += char;
+                    }
+                } else {
                     if (char === '"') {
-                        inQuote = !inQuote;
-                        continue;
+                        // Opening quote
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        // End of field
+                        row.push(field.trim());
+                        field = '';
+                    } else if (char === '\n' || char === '\r') {
+                        // End of row (only if not in quotes)
+                        row.push(field.trim());
+                        if (row.length > 0 && row.some(cell => cell !== "")) {
+                            data.push(row);
+                        }
+                        row = [];
+                        field = '';
+                        // Handle CRLF (skip the \n if we just processed \r)
+                        if (char === '\r' && nextChar === '\n') i++;
+                    } else {
+                        field += char;
                     }
-                    if (char === ',' && !inQuote) {
-                        rowData.push(token);
-                        token = '';
-                        continue;
-                    }
-                    token += char;
                 }
-                rowData.push(token);
-                let obj = {};
-                headers.forEach((h, idx) => obj[h] = rowData[idx] ? rowData[idx].trim() : '');
-                data.push(obj);
             }
-            return data;
+
+            // Push the final field/row if the file doesn't end in a newline
+            if (field || row.length > 0) {
+                row.push(field.trim());
+                data.push(row);
+            }
+
+            // Map headers to objects
+            const headers = data.shift();
+            return data.map(values => {
+                let obj = {};
+                headers.forEach((h, i) => obj[h] = values[i] || '');
+                return obj;
+            });
         }
 
         function exportCSV() {
