@@ -80,6 +80,8 @@ def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
         df["gender"].isin(["female_feminine", "male_masculine"]), "not_specified"
     )
 
+    dataset_types = df["type"].unique().tolist()
+
     # Group by type and gender, sum durations
     grouped = (
         df.groupby(["type", "gender"], dropna=False)["duration"]
@@ -98,7 +100,7 @@ def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
     absolute_total = grouped["total_duration"].sum(axis=0)
     absolute_total_label = f"Total duration: {absolute_total:,.1f} h"
 
-    validated_duration = grouped["total_duration"].loc[["train", "test", "dev"]].sum()
+    validated_duration = grouped["total_duration"].loc[dataset_types].sum()
     validated_duration_label = f"Total validated duration: {validated_duration:,.1f} h"
     grouped = grouped.drop(columns="total_duration")
 
@@ -162,6 +164,42 @@ def plot_dataset_type_gender_distribution(all_data_df: pd.DataFrame):
     )
     ax.legend()
 
+    plt.show()
+
+
+def plot_accent_region_and_age_distribution(df: pd.DataFrame):
+    # Prepare accent data
+    accent_percentages = df["accent_region"].value_counts(normalize=True) * 100
+    major_accent = accent_percentages[accent_percentages >= 5]
+    minor_accent_sum = accent_percentages[accent_percentages < 5].sum()
+    accent_data = (
+        pd.concat([major_accent, pd.Series({"All Other": minor_accent_sum})])
+        if minor_accent_sum > 0
+        else major_accent
+    )
+
+    # Prepare age data
+    age_percentages = df["age"].value_counts(normalize=True) * 100
+    major_age = age_percentages[age_percentages >= 5]
+    minor_age_sum = age_percentages[age_percentages < 5].sum()
+    age_data = (
+        pd.concat([major_age, pd.Series({"All Other": minor_age_sum})])
+        if minor_age_sum > 0
+        else major_age
+    )
+
+    # Create side-by-side pie charts
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    # Accent pie chart
+    ax1.pie(accent_data, labels=accent_data.index, autopct="%1.1f%%", startangle=90)
+    ax1.set_title("Speakers by Accent Region", fontsize=14, fontweight="bold")
+
+    # Age pie chart
+    ax2.pie(age_data, labels=age_data.index, autopct="%1.1f%%", startangle=90)
+    ax2.set_title("Speakers by Age", fontsize=14, fontweight="bold")
+
+    plt.tight_layout()
     plt.show()
 
 

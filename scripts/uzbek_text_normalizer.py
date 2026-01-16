@@ -22,17 +22,18 @@ def normalize_text(
     Pipeline order:
     1. Remove newlines and carriage returns
     2. Normalize numbers to Uzbek words (optional)
-    2. Clean bullet points and list markers (e.g. •, -, 1.)
-    3. Normalize apostrophe variants to standard ASCII apostrophe (')
-    4. Normalize annotation markers (optional)
-    5. Clean excessive whitespace
-    6. Normalize uz domains: qalampir.uz -> Qalampir uz
-    7. Fix spacing around punctuations
-    8. Normalize capitalization around ".", "?", "!" (optional)
-    9. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
-    10. Remove punctuations (optional): "!", ",", ".", ";", "?"
-    11. Lowercase entire text (optional)
-    12. Clean excessive whitespace
+    3. Clean bullet points and list markers (e.g. •, -, 1.)
+    4. Normalize apostrophe variants to standard ASCII apostrophe (')
+    5. Normalize double quote variants to simple double quote (“, ”, «, », ...) to (")
+    6. Normalize annotation markers (optional)
+    7. Clean excessive whitespace
+    8. Normalize uz domains: qalampir.uz -> Qalampir uz
+    9. Fix spacing around punctuations
+    10. Normalize capitalization around ".", "?", "!" (optional)
+    11. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
+    12. Remove punctuations (optional): "!", ",", ".", ";", "?"
+    13. Lowercase entire text (optional)
+    14. Clean excessive whitespace
 
     Args:
         text: Raw transcribed text to normalize
@@ -64,6 +65,7 @@ def normalize_text(
 
     text = remove_list_markers(text)
     text = normalize_uzbek_apostrophes(text)
+    text = normalize_double_quotes(text)
 
     if should_normalize_annotations:
         text = normalize_annotations(text, lowercase_annotation=lowercase_annotations)
@@ -137,6 +139,25 @@ def normalize_uzbek_apostrophes(text: str) -> str:
     return text
 
 
+def normalize_double_quotes(text: str) -> str:
+    """Normalize all double quote variants to simple double quote"""
+    text = _get_safe_string_if_nan(text)
+
+    double_quotes = [
+        "“",
+        "”",
+        "„",
+        "‟",
+        "«",
+        "»",
+    ]
+
+    for double_quote in double_quotes:
+        text = text.replace(double_quote, '"')
+
+    return text
+
+
 def normalize_annotations(text: str, lowercase_annotation=True) -> str:
     """Normalize single-word annotations [text], (musiqa), *text* to [text]."""
 
@@ -165,6 +186,7 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
     Use remove_ellipsis True for read/book speech, False for conversational speech.
     """
     chars_to_remove = [
+        "­",
         '"',
         "“",
         "”",
@@ -197,7 +219,8 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
     for char in chars_to_remove:
         text = text.replace(char, "")
 
-    # Remove dashes and hyphens acting as dashes (space on both sides)
+    # TODO
+    # Removes dashes and hyphens acting as dashes (space on both sides) e.g. Mening uyim ― mening qo'rg'onim.
     # Avoids cases with numbers e.g. 2021 - 2025 or "Tashqarida - 5 gradus sovuq"
     text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
 
