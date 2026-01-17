@@ -10,12 +10,14 @@ from scripts.uzbek_text_normalizer import normalize_text
 
 class NormalizationLevel(Enum):
     """Predefined normalization levels for text comparison."""
+
     STRICT = "strict"  # Heavy normalization
-    LIGHT = "light"    # Minimal normalization
-    NONE = "none"      # No normalization at all
+    LIGHT = "light"  # Minimal normalization
+    NONE = "none"  # No normalization at all
+
 
 # Define normalization configurations
-NORMALIZATION_CONFIGS: Dict[NormalizationLevel, Dict[str, bool]|None] = {
+NORMALIZATION_CONFIGS: Dict[NormalizationLevel, Dict[str, bool] | None] = {
     NormalizationLevel.STRICT: {
         "should_normalize_numbers_to_words": True,
         "should_remove_punctuations": True,
@@ -30,7 +32,7 @@ NORMALIZATION_CONFIGS: Dict[NormalizationLevel, Dict[str, bool]|None] = {
         "should_lowercase_text": False,
         "should_remove_ellipsis": False,
     },
-    NormalizationLevel.NONE: None
+    NormalizationLevel.NONE: None,
 }
 
 
