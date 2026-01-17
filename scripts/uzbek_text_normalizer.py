@@ -30,8 +30,8 @@ def normalize_text(
     8. Normalize uz domains: qalampir.uz -> Qalampir uz
     9. Fix spacing around punctuations
     10. Normalize capitalization around ".", "?", "!" (optional)
-    11. Remove special chars: quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...) etc.
-    12. Remove punctuations (optional): "!", ",", ".", ";", "?"
+    11. Remove special chars: ­, &, =, etc.
+    12. Remove punctuations (optional): "!", ",", ".", ";", "?", quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...)
     13. Lowercase entire text (optional)
     14. Clean excessive whitespace
 
@@ -76,9 +76,9 @@ def normalize_text(
     if should_normalize_capitalization:
         text = normalize_capitalization(text)
 
-    text = remove_special_chars(text, remove_ellipsis=should_remove_ellipsis)
+    text = remove_special_chars(text)
     if should_remove_punctuations:
-        text = remove_punctuations(text)
+        text = remove_punctuations(text, remove_ellipsis=should_remove_ellipsis)
 
     if should_lowercase_text:
         text = text.lower()
@@ -113,6 +113,10 @@ def remove_list_markers(text: str) -> str:
     # Remove bullet points in the middle of text
     mid_bullet_pattern = r"[•–—→⋅◦▪▫‣]"
     text = re.sub(mid_bullet_pattern, " ", text).rstrip()
+
+    # Remove list markers after punctuations (potentially, it comes after punctuation then new line then text)
+    # E.g. U birdan to'xtadi. — Bu qanday gap, Farida? Biz axir unashilgan kishilarmiz-ku! — dedi.
+    text = re.sub(r"([!.;?])\s+[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
 
     return text
 
@@ -180,26 +184,17 @@ def normalize_annotations(text: str, lowercase_annotation=True) -> str:
     return text
 
 
-def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
+def remove_special_chars(text: str) -> str:
     """
-    Remove special characters that don't affect ASR: quotes, colons, optionally ellipsis and others.
-    Use remove_ellipsis True for read/book speech, False for conversational speech.
+    Remove special characters that don't affect ASR.
     """
     chars_to_remove = [
         "­",
-        '"',
-        "“",
-        "”",
-        "„",
-        "‟",
-        "«",
-        "»",
         "˝",
-        ":",
         "#",
         "&",
         "*",
-        "+",
+        # "+",
         "/",
         "<",
         ">",
@@ -219,7 +214,19 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
     for char in chars_to_remove:
         text = text.replace(char, "")
 
-    # TODO
+    return text
+
+
+def remove_punctuations(text: str, remove_ellipsis: bool = False):
+    """Use remove_ellipsis True for read/book speech, False for conversational speech."""
+    punctuations = ["!", ",", ".", ";", ":", "?"]
+    for punctuation in punctuations:
+        text = text.replace(punctuation, "")
+
+    double_quotes = ['"', "“", "”", "„", "‟", "«", "»"]
+    for quote in double_quotes:
+        text = text.replace(quote, "")
+
     # Removes dashes and hyphens acting as dashes (space on both sides) e.g. Mening uyim ― mening qo'rg'onim.
     # Avoids cases with numbers e.g. 2021 - 2025 or "Tashqarida - 5 gradus sovuq"
     text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
@@ -227,14 +234,6 @@ def remove_special_chars(text: str, remove_ellipsis: bool = False) -> str:
     if remove_ellipsis:
         text = text.replace("…", "")  # Single ellipsis character
         text = re.sub(r"\.{2,}", "", text)  # Remove 2 or more consecutive dots
-
-    return text
-
-
-def remove_punctuations(text: str):
-    punctuations = ["!", ",", ".", ";", "?"]
-    for punctuation in punctuations:
-        text = text.replace(punctuation, "")
 
     return text
 
