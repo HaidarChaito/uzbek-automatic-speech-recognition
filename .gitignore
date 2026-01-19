@@ -1,6 +1,8 @@
 datasets/
 .idea/
 
+outputs/
+
 ### JupyterNotebooks template
 # gitignore template for Jupyter Notebooks
 # website: http://jupyter.org/

@@ -10,7 +10,7 @@ from typing import Iterable, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
-from datasets import Audio, Dataset, DatasetDict, concatenate_datasets, load_dataset
+from datasets import Audio, Dataset, concatenate_datasets
 from evaluate import load as load_metric
 from transformers import (
     Trainer,
@@ -24,20 +24,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from resources.datasets import Datasets
-
 TEXT_COLUMN_CANDIDATES = (
+    "ref_normalized",
     "sentence_checked",
     "text_spt",
     "predicted_sentence",
     "text",
     "transcript",
     "transcription",
-    "ref_normalized",
 )
 
 PATH_COLUMN_CANDIDATES = ("path", "audio", "file", "file_path")
-HF_AUDIO_COLUMN_CANDIDATES = ("audio", "file", "path")
 
 
 @dataclass(frozen=True)
@@ -45,48 +42,39 @@ class DatasetConfig:
     name: str
     csv_path: Path
     audio_dir: Optional[Path] = None
-    hf_repo_id: Optional[str] = None
 
 
 def build_dataset_configs(data_root: Path) -> List[DatasetConfig]:
     return [
         DatasetConfig(
             name="feruza_speech",
-            csv_path=data_root / "feruza-speech" / "google_spt_transcriptions.csv",
-            audio_dir=data_root / "feruza-speech",
-            hf_repo_id=Datasets.FERUZA_SPEECH,
+            csv_path=data_root / "feruza_speech_modified.csv",
+            audio_dir=data_root / "feruza-speech" / "sampled_audio",
         ),
         DatasetConfig(
             name="uzbek_speech_corpus",
-            csv_path=data_root
-            / "uzbek-speech-corpus"
-            / "data"
-            / "google_spt_transcriptions.csv",
-            audio_dir=data_root / "uzbek-speech-corpus" / "data",
-            hf_repo_id=Datasets.UZBEK_SPEECH_CORPUS,
+            csv_path=data_root / "uzbek-speech-corpus__case_insensitive.csv",
+            audio_dir=data_root / "uzbek-speech-corpus" / "sampled_audio",
         ),
         DatasetConfig(
-            name="it_youtube_uzbek_speech",
-            csv_path=data_root
-            / "it_youtube_uzbek_speech_dataset"
-            / "data"
-            / "it_dataset_checked.csv",
-            audio_dir=data_root / "it_youtube_uzbek_speech_dataset" / "data",
-            hf_repo_id=Datasets.IT_YOUTUBE_UZBEK_SPEECH,
+            name="it_dataset",
+            csv_path=data_root / "it_dataset_modified.csv",
+            audio_dir=data_root / "it_youtube_uzbek_speech_dataset" / "sampled_audio",
         ),
         DatasetConfig(
-            name="news_youtube_uzbek_speech",
-            csv_path=data_root
-            / "news_youtube_uzbek_speech_dataset"
-            / "data"
-            / "news_dataset_checked.csv",
-            audio_dir=data_root / "news_youtube_uzbek_speech_dataset" / "data",
-            hf_repo_id=Datasets.NEWS_YOUTUBE_UZBEK_SPEECH,
+            name="news_dataset",
+            csv_path=data_root / "news_dataset_modified.csv",
+            audio_dir=data_root / "news_youtube_uzbek_speech_dataset" / "sampled_audio",
         ),
         DatasetConfig(
-            name="uzbekvoice_dataset",
-            csv_path=data_root / "uzbekvoice_dataset" / "data" / "google_spt_transcriptions.csv",
-            audio_dir=data_root / "uzbekvoice_dataset" / "data",
+            name="uzbek_voice",
+            csv_path=data_root / "uzbek_voice_modified.csv",
+            audio_dir=data_root / "uzbekvoice_dataset" / "sampled_audio",
+        ),
+        DatasetConfig(
+            name="common_voice",
+            csv_path=data_root / "common_voice_modified.csv",
+            audio_dir=data_root / "common_voice" / "sampled_audio",
         ),
     ]
 
@@ -145,7 +133,7 @@ def _resolve_audio_dir(
 
 
 def _normalize_text(text: str) -> str:
-    return " ".join(str(text).lower().split())
+    return " ".join(str(text).split())
 
 
 def _load_csv_dataset(
@@ -200,48 +188,6 @@ def _load_csv_dataset(
     return config.name, dataset
 
 
-def _load_hf_dataset(
-    config: DatasetConfig,
-    sample_fraction: float,
-    seed: int,
-    hf_config: Optional[str],
-    hf_split: Optional[str],
-) -> Tuple[str, Dataset]:
-    if not config.hf_repo_id:
-        raise ValueError(f"No Hugging Face repo configured for {config.name}.")
-
-    if hf_split:
-        dataset = load_dataset(config.hf_repo_id, hf_config, split=hf_split)
-    else:
-        dataset = load_dataset(config.hf_repo_id, hf_config)
-
-    if isinstance(dataset, DatasetDict):
-        dataset = concatenate_datasets([dataset[split] for split in dataset.keys()])
-
-    text_column = _select_column(TEXT_COLUMN_CANDIDATES, dataset.column_names)
-    audio_column = _select_column(HF_AUDIO_COLUMN_CANDIDATES, dataset.column_names)
-    if not text_column or not audio_column:
-        raise ValueError(
-            f"Hugging Face dataset {config.hf_repo_id} is missing audio/text columns."
-        )
-
-    if text_column != "text":
-        dataset = dataset.rename_column(text_column, "text")
-    if audio_column != "audio":
-        dataset = dataset.rename_column(audio_column, "audio")
-    dataset = dataset.filter(
-        lambda row: row["text"] is not None and str(row["text"]).strip() != ""
-    )
-    if 0 < sample_fraction < 1:
-        dataset = dataset.shuffle(seed=seed)
-        subset_size = max(1, int(len(dataset) * sample_fraction))
-        dataset = dataset.select(range(subset_size))
-
-    dataset = dataset.map(lambda row: {"text": _normalize_text(row["text"])})
-    dataset = dataset.cast_column("audio", Audio(sampling_rate=16_000))
-    return config.name, dataset
-
-
 def _build_vocab(texts: List[str], output_dir: Path) -> Path:
     vocab_chars = sorted(set("".join(texts)))
     vocab_dict = {}
@@ -273,12 +219,11 @@ class DataCollatorCTCWithPadding:
             padding=self.padding,
             return_tensors="pt",
         )
-        with self.processor.as_target_processor():
-            labels_batch = self.processor.pad(
-                label_features,
-                padding=self.padding,
-                return_tensors="pt",
-            )
+        labels_batch = self.processor.tokenizer.pad(
+            label_features,
+            padding=self.padding,
+            return_tensors="pt",
+        )
         labels = labels_batch["input_ids"].masked_fill(
             labels_batch.attention_mask.ne(1), -100
         )
@@ -294,9 +239,28 @@ def _prepare_batch(
         audio["array"], sampling_rate=audio["sampling_rate"]
     ).input_values[0]
     batch["input_length"] = len(audio["array"])
-    with processor.as_target_processor():
-        batch["labels"] = processor(batch["text"]).input_ids
+    batch["labels"] = processor(text=batch["text"]).input_ids
     return batch
+
+
+def _filter_by_duration(
+    dataset: Dataset,
+    max_audio_seconds: Optional[float],
+    min_audio_seconds: Optional[float],
+) -> Dataset:
+    if max_audio_seconds is None and min_audio_seconds is None:
+        return dataset
+
+    def _keep(row: dict) -> bool:
+        audio = row["audio"]
+        duration = len(audio["array"]) / audio["sampling_rate"]
+        if max_audio_seconds is not None and duration > max_audio_seconds:
+            return False
+        if min_audio_seconds is not None and duration < min_audio_seconds:
+            return False
+        return True
+
+    return dataset.filter(_keep)
 
 
 def main() -> None:
@@ -326,13 +290,6 @@ def main() -> None:
         help="Directory to save checkpoints and artifacts.",
     )
     parser.add_argument(
-        "--data-source",
-        type=str,
-        default="hf",
-        choices=("hf", "local"),
-        help="Load audio from Hugging Face or local CSV/audio folders.",
-    )
-    parser.add_argument(
         "--audio-root",
         type=Path,
         default=None,
@@ -343,18 +300,6 @@ def main() -> None:
         type=Path,
         default=None,
         help="JSON file mapping dataset names to audio directories.",
-    )
-    parser.add_argument(
-        "--hf-config",
-        type=str,
-        default=None,
-        help="Optional Hugging Face dataset config name.",
-    )
-    parser.add_argument(
-        "--hf-split",
-        type=str,
-        default=None,
-        help="Optional Hugging Face dataset split (e.g. train).",
     )
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--epochs", type=int, default=1, help="Training epochs.")
@@ -404,6 +349,66 @@ def main() -> None:
         action="store_true",
         help="Disable length-based batching.",
     )
+    parser.add_argument(
+        "--max-audio-seconds",
+        type=float,
+        default=None,
+        help="Drop audio samples longer than this duration (seconds).",
+    )
+    parser.add_argument(
+        "--min-audio-seconds",
+        type=float,
+        default=None,
+        help="Drop audio samples shorter than this duration (seconds).",
+    )
+    parser.add_argument(
+        "--gradient-checkpointing",
+        action="store_true",
+        help="Enable gradient checkpointing to reduce GPU memory usage.",
+    )
+    parser.add_argument(
+        "--no-gradient-checkpointing",
+        action="store_true",
+        help="Disable gradient checkpointing.",
+    )
+    parser.add_argument(
+        "--debug-samples",
+        type=int,
+        default=0,
+        help="Print N decoded predictions vs labels during evaluation.",
+    )
+    parser.add_argument(
+        "--debug-metrics",
+        action="store_true",
+        help="Print basic stats about empty/short predictions and labels.",
+    )
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=1e-4,
+        help="Learning rate for fine-tuning.",
+    )
+    parser.add_argument(
+        "--warmup-steps",
+        type=int,
+        default=100,
+        help="Warmup steps for the learning rate scheduler.",
+    )
+    parser.add_argument(
+        "--freeze-feature-extractor",
+        action="store_true",
+        help="Freeze the wav2vec2 feature extractor.",
+    )
+    parser.add_argument(
+        "--no-freeze-feature-extractor",
+        action="store_true",
+        help="Do not freeze the wav2vec2 feature extractor.",
+    )
+    parser.add_argument(
+        "--ctc-zero-infinity",
+        action="store_true",
+        help="Enable CTC zero infinity to avoid NaNs.",
+    )
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -422,24 +427,26 @@ def main() -> None:
     datasets = []
     for config in dataset_configs:
         try:
-            if args.data_source == "hf":
-                name, dataset = _load_hf_dataset(
-                    config,
-                    sample_fraction=args.sample_fraction,
-                    seed=args.seed,
-                    hf_config=args.hf_config,
-                    hf_split=args.hf_split,
-                )
-            else:
-                name, dataset = _load_csv_dataset(
-                    config,
-                    sample_fraction=args.sample_fraction,
-                    seed=args.seed,
-                    data_root=args.data_root,
-                    audio_root=args.audio_root,
-                    audio_map=audio_map,
-                )
+            name, dataset = _load_csv_dataset(
+                config,
+                sample_fraction=args.sample_fraction,
+                seed=args.seed,
+                data_root=args.data_root,
+                audio_root=args.audio_root,
+                audio_map=audio_map,
+            )
             print(f"[{name}] loaded {len(dataset)} samples")
+            before_filter = len(dataset)
+            dataset = _filter_by_duration(
+                dataset,
+                max_audio_seconds=args.max_audio_seconds,
+                min_audio_seconds=args.min_audio_seconds,
+            )
+            if len(dataset) != before_filter:
+                print(
+                    f"[{name}] filtered {before_filter - len(dataset)} samples "
+                    f"outside duration constraints."
+                )
             datasets.append(dataset)
         except (FileNotFoundError, ValueError) as exc:
             print(f"[{config.name}] skipped: {exc}")
@@ -479,12 +486,46 @@ def main() -> None:
     data_collator = DataCollatorCTCWithPadding(processor=processor)
     wer_metric = load_metric("wer")
 
+    printed_debug = False
+
     def compute_metrics(pred) -> dict:
         pred_ids = np.argmax(pred.predictions, axis=-1)
         pred_str = processor.batch_decode(pred_ids)
         label_ids = pred.label_ids.copy()
         label_ids[label_ids == -100] = processor.tokenizer.pad_token_id
         label_str = processor.batch_decode(label_ids, group_tokens=False)
+        nonlocal printed_debug
+        if args.debug_samples > 0 and not printed_debug:
+            printed_debug = True
+            sample_count = min(args.debug_samples, len(pred_str))
+            print("\n[debug] sample predictions vs labels")
+            for idx in range(sample_count):
+                print(f"[pred {idx}] {pred_str[idx]}")
+                print(f"[label {idx}] {label_str[idx]}")
+                print("---")
+        if args.debug_metrics:
+            pred_lengths = [len(text.strip()) for text in pred_str]
+            label_lengths = [len(text.strip()) for text in label_str]
+            empty_preds = sum(length == 0 for length in pred_lengths)
+            empty_labels = sum(length == 0 for length in label_lengths)
+            avg_pred_len = float(np.mean(pred_lengths)) if pred_lengths else 0.0
+            avg_label_len = float(np.mean(label_lengths)) if label_lengths else 0.0
+            print(
+                "[debug] empty preds/labels: "
+                f"{empty_preds}/{len(pred_str)} | {empty_labels}/{len(label_str)}"
+            )
+            print(
+                "[debug] avg pred/label length: "
+                f"{avg_pred_len:.1f} | {avg_label_len:.1f}"
+            )
+            if pred_ids.size:
+                flat_ids = pred_ids.reshape(-1)
+                counts = np.bincount(flat_ids, minlength=len(processor.tokenizer))
+                top_id = int(np.argmax(counts))
+                top_token = processor.tokenizer.convert_ids_to_tokens([top_id])[0]
+                print(
+                    f"[debug] most common pred token: id={top_id} token={top_token}"
+                )
         wer = wer_metric.compute(predictions=pred_str, references=label_str)
         return {"wer": wer, "accuracy": 1.0 - wer}
 
@@ -493,8 +534,16 @@ def main() -> None:
         vocab_size=len(processor.tokenizer),
         ctc_loss_reduction="mean",
         pad_token_id=processor.tokenizer.pad_token_id,
+        ctc_zero_infinity=args.ctc_zero_infinity,
     )
-    model.freeze_feature_extractor()
+    if args.no_freeze_feature_extractor:
+        freeze_feature_extractor = False
+    elif args.freeze_feature_extractor:
+        freeze_feature_extractor = True
+    else:
+        freeze_feature_extractor = True
+    if freeze_feature_extractor:
+        model.freeze_feature_extractor()
 
     if args.device == "cpu":
         use_mps = False
@@ -502,26 +551,36 @@ def main() -> None:
         use_mps = True
 
     force_cpu = args.device == "cpu" or (args.device == "auto" and use_mps)
+    use_cuda = torch.cuda.is_available() and not force_cpu
+
+    if args.no_gradient_checkpointing:
+        gradient_checkpointing = False
+    elif args.gradient_checkpointing:
+        gradient_checkpointing = True
+    else:
+        gradient_checkpointing = use_cuda or (use_mps and not force_cpu)
+    if gradient_checkpointing and hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
 
     per_device_train_batch_size = (
         args.train_batch_size
         if args.train_batch_size is not None
         else 1
-        if use_mps and not force_cpu
+        if (use_mps and not force_cpu) or use_cuda
         else 2
     )
     per_device_eval_batch_size = (
         args.eval_batch_size
         if args.eval_batch_size is not None
         else 1
-        if use_mps and not force_cpu
+        if (use_mps and not force_cpu) or use_cuda
         else 2
     )
     gradient_accumulation_steps = (
         args.grad_accum_steps
         if args.grad_accum_steps is not None
         else 4
-        if use_mps and not force_cpu
+        if (use_mps and not force_cpu) or use_cuda
         else 2
     )
     if args.no_group_by_length:
@@ -541,9 +600,10 @@ def main() -> None:
         num_train_epochs=args.epochs,
         max_steps=args.max_train_steps or -1,
         fp16=torch.cuda.is_available(),
+        gradient_checkpointing=gradient_checkpointing,
         logging_steps=50,
-        learning_rate=3e-4,
-        warmup_steps=100,
+        learning_rate=args.learning_rate,
+        warmup_steps=args.warmup_steps,
         save_total_limit=2,
         report_to=[],
         group_by_length=group_by_length,
