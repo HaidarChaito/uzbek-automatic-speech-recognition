@@ -21,7 +21,7 @@ def normalize_text(
 
     Pipeline order:
     1. Remove newlines and carriage returns
-    2. Normalize numbers to Uzbek words (optional)
+    2. Normalize numbers in digit to Uzbek words (optional)
     3. Clean bullet points and list markers (e.g. •, -, 1.)
     4. Normalize apostrophe variants to standard ASCII apostrophe (')
     5. Normalize double quote variants to simple double quote (“, ”, «, », ...) to (")
