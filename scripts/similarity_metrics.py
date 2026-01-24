@@ -86,7 +86,7 @@ def calculate(
     }
 
 
-def calculate(
+def calculate_batch(
     references: list[str],
     hypotheses: list[str],
 ) -> dict[str, float]:

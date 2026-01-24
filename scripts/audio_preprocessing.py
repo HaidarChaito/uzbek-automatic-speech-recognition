@@ -1,10 +1,13 @@
 import io
+import os
 from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
 import torchaudio
 import torchaudio.functional as F
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
 
 
 def resample_audio(audio_path, target_sr=16_000, save_path=None):
@@ -296,7 +299,7 @@ def normalize_audio(
         highpass_cutoff: High-pass filter cutoff frequency
         remove_silences: Whether to remove long silences
         silence_threshold_db: Threshold for silence detection
-        min_silence_duration: Minimum silence duration to remove
+        min_silence_duration: Minimum silence duration to remove (seconds)
         apply_limiter: Whether to apply soft limiting
         limiter_threshold: Limiter threshold
 
@@ -424,3 +427,84 @@ def process_audio_bytes(
     return _process_waveform(
         file_name, waveform, sr, target_sr, save_path, normalize, **normalize_kwargs
     )
+
+
+def chunk_audio_on_silence(
+    audio_file: str,
+    input_dir: str,
+    output_dir: str,
+    min_silence_len: int = 400,
+    silence_thresh: int = -45,
+    keep_silence: int = 200,
+    min_chunk_ms: int = 4000,
+    max_chunk_ms: int = 15000,
+) -> list[dict]:
+    """
+    Split an audio file on silence and merge chunks to target duration.
+
+    Args:
+        audio_file: Filename of the audio file
+        input_dir: Directory containing the input audio file
+        output_dir: Directory to save output chunks
+        min_silence_len: Minimum silence length (ms) to split on
+        silence_thresh: Silence threshold in dBFS
+        keep_silence: Amount of silence (ms) to keep on each side
+        min_chunk_ms: Minimum chunk duration (ms)
+        max_chunk_ms: Maximum chunk duration (ms)
+
+    Returns:
+        List of metadata dicts for each chunk
+    """
+    audio = AudioSegment.from_file(os.path.join(input_dir, audio_file))
+
+    raw_chunks = split_on_silence(
+        audio,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh,
+        keep_silence=keep_silence,
+    )
+
+    if not raw_chunks:
+        raw_chunks = [audio]
+
+    # Merge small chunks
+    merged_chunks = []
+    current_chunk = AudioSegment.empty()
+
+    for chunk in raw_chunks:
+        if len(current_chunk) + len(chunk) <= max_chunk_ms:
+            current_chunk += chunk
+        else:
+            if len(current_chunk) >= min_chunk_ms:
+                merged_chunks.append(current_chunk)
+            elif len(current_chunk) > 0:
+                current_chunk += chunk
+                merged_chunks.append(current_chunk)
+                current_chunk = AudioSegment.empty()
+                continue
+            current_chunk = chunk
+
+    if len(current_chunk) >= min_chunk_ms:
+        merged_chunks.append(current_chunk)
+    elif len(current_chunk) > 0 and merged_chunks:
+        merged_chunks[-1] += current_chunk
+    elif len(current_chunk) > 0:
+        merged_chunks.append(current_chunk)
+
+    # Export and collect metadata
+    file_metadata = []
+    for i, chunk in enumerate(merged_chunks):
+        chunk_filename = f"{Path(audio_file).stem}_{i}.wav"
+        chunk_path = os.path.join(output_dir, chunk_filename)
+        chunk.export(chunk_path, format="wav")
+
+        file_metadata.append(
+            {
+                "path": audio_file,
+                "chunk_path": chunk_filename,
+                "duration": round(len(chunk) / 1000, ndigits=2),
+                "chunk_index": i,
+            }
+        )
+
+    return file_metadata

@@ -65,7 +65,7 @@ def compute_metrics(pred, processor: SpecificProcessorType):
     labels_str = processor.batch_decode(label_ids, skip_special_tokens=True)
 
     # Return corpus-level (macro-averaging) metrics
-    return similarity_metrics.calculate(labels_str, preds_str)
+    return similarity_metrics.calculate_batch(labels_str, preds_str)
 
 
 # ============================================================================

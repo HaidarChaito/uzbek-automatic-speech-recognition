@@ -2,7 +2,7 @@ import math
 import re
 from typing import AnyStr
 
-from scripts.uzbek_text_normalizer import normalize_uzbek_apostrophes
+from scripts import uzbek_text_normalizer
 
 
 def _get_word_from_char_position(text, current_char_at):
@@ -475,6 +475,6 @@ def to_latin(cyrillic_text, normalize_apostrophes=False):
     latin_text = "".join(result)
 
     if normalize_apostrophes:
-        latin_text = normalize_uzbek_apostrophes(latin_text)
+        latin_text = uzbek_text_normalizer.normalize_uzbek_apostrophes(latin_text)
 
     return latin_text
