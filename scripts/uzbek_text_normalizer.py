@@ -7,7 +7,6 @@ def normalize_text(
     text: str,
     should_normalize_numbers_to_words: bool = True,
     should_remove_punctuations: bool = False,
-    should_normalize_capitalization: bool = True,
     should_lowercase_text: bool = False,
     should_remove_ellipsis=False,
     should_normalize_annotations: bool = True,
@@ -23,23 +22,23 @@ def normalize_text(
     1. Remove newlines and carriage returns
     2. Normalize numbers in digit to Uzbek words (optional)
     3. Clean bullet points and list markers (e.g. •, -, 1.)
-    4. Normalize apostrophe variants to standard ASCII apostrophe (')
-    5. Normalize double quote variants to simple double quote (“, ”, «, », ...) to (")
-    6. Normalize annotation markers (optional)
-    7. Clean excessive whitespace
-    8. Normalize uz domains: qalampir.uz -> Qalampir uz
-    9. Fix spacing around punctuations
-    10. Normalize capitalization around ".", "?", "!" (optional)
-    11. Remove special chars: ­, &, =, etc.
-    12. Remove punctuations (optional): "!", ",", ".", ";", "?", quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...)
-    13. Lowercase entire text (optional)
-    14. Clean excessive whitespace
+    4. Normalize dash variants (―‒⸺—–-) to standard –
+    5. Normalize apostrophe variants to standard ASCII apostrophe (')
+    6. Normalize double quote variants to simple double quote (“, ”, «, », ...) to (")
+    7. Normalize annotation markers (optional)
+    8. Clean excessive whitespace
+    9. Normalize uz domains: qalampir.uz -> Qalampir uz
+    10. Fix spacing around punctuations
+    11. Normalize capitalization around ".", "?", "!"
+    12. Remove special chars: ­, &, =, etc.
+    13. Remove punctuations (optional): "!", ",", ".", ";", "?", quotes (", “, ”, «, ...), colons (:), dashes, ellipsis (...)
+    14. Lowercase entire text (optional)
+    15. Clean excessive whitespace
 
     Args:
         text: Raw transcribed text to normalize
         should_normalize_numbers_to_words: If True, normalize numbers to Uzbek words (e.g. 15% -> o'n besh foiz)
         should_remove_punctuations: If True, punctuation charecters will be removed (.,?!:)
-        should_normalize_capitalization: If True, normalize capitalization (e.g. capitalization after punctuations)
         should_lowercase_text: If True, makes entire text to lowercase
         should_remove_ellipsis: If True, removes ellipsis (...) from text [use it with read speeach]
         should_normalize_annotations: If True, normalize annotation brackets: (text), *[text]* -> [text]
@@ -64,6 +63,7 @@ def normalize_text(
         text = number_to_uzbek_word.normalize(text)
 
     text = remove_list_markers(text)
+    text = normalize_dashes(text)
     text = normalize_uzbek_apostrophes(text)
     text = normalize_double_quotes(text)
 
@@ -73,8 +73,7 @@ def normalize_text(
     text = remove_whitespaces(text)
     text = normalize_uz_domains(text)
     text = normalize_spacing_around_punc(text)
-    if should_normalize_capitalization:
-        text = normalize_capitalization(text)
+    text = capitalize_after_punc(text)
 
     text = remove_special_chars(text)
     if should_remove_punctuations:
@@ -111,13 +110,21 @@ def remove_list_markers(text: str) -> str:
     text = re.sub(numbered_pattern_start, "", text)
 
     # Remove bullet points in the middle of text
-    mid_bullet_pattern = r"[•–—→⋅◦▪▫‣]"
+    mid_bullet_pattern = r"[•→⋅◦▪▫‣]"
     text = re.sub(mid_bullet_pattern, " ", text).rstrip()
 
-    # Remove list markers after punctuations (potentially, it comes after punctuation then new line then text)
+    # Remove list markers after punctuations, except when followed by 'dedi', 'deya', 'deb', 'dedim'
     # E.g. U birdan to'xtadi. — Bu qanday gap, Farida? Biz axir unashilgan kishilarmiz-ku! — dedi.
-    text = re.sub(r"([!.;?])\s+[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
+    text = re.sub(
+        r"([!.;?])\s+[―‒⸺—–-] +(?!(?:dedi|deya|deb|dedim)\b)([a-zA-Z])", r"\1 \2", text
+    )
 
+    return text
+
+
+def normalize_dashes(text):
+    # Normalizes all dashes that followed by word into one type. Avoids cases with numbers: Tashqarida -5 gradus.
+    text = re.sub(r"[―‒⸺—–-] +([a-zA-Z])", r"– \1", text)
     return text
 
 
@@ -191,8 +198,8 @@ def remove_special_chars(text: str) -> str:
     chars_to_remove = [
         "­",
         "˝",
-        "#",
-        "&",
+        # "#",
+        # "&",
         "*",
         # "+",
         "/",
@@ -219,9 +226,16 @@ def remove_special_chars(text: str) -> str:
 
 def remove_punctuations(text: str, remove_ellipsis: bool = False):
     """Use remove_ellipsis True for read/book speech, False for conversational speech."""
+    # Protect ellipsis first
+    text = re.sub(r"\.{3,}", "…", text)  # Three or more dots
+
+    # Remove punctuations
     punctuations = ["!", ",", ".", ";", ":", "?"]
     for punctuation in punctuations:
         text = text.replace(punctuation, "")
+
+    # Restore ellipsis
+    text = text.replace("…", "...")
 
     double_quotes = ['"', "“", "”", "„", "‟", "«", "»"]
     for quote in double_quotes:
@@ -229,7 +243,7 @@ def remove_punctuations(text: str, remove_ellipsis: bool = False):
 
     # Removes dashes and hyphens acting as dashes (space on both sides) e.g. Mening uyim ― mening qo'rg'onim.
     # Avoids cases with numbers e.g. 2021 - 2025 or "Tashqarida - 5 gradus sovuq"
-    text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
+    text = re.sub(r"[―‒⸺—–-] +([a-zA-Z])", r"\1", text)
 
     if remove_ellipsis:
         text = text.replace("…", "")  # Single ellipsis character
@@ -243,14 +257,6 @@ def normalize_spacing_around_punc(text: str) -> str:
     return re.sub(
         r"([.,!?;:])([A-Za-z])", r"\1 \2", text
     )  # Add space after punctuation
-
-
-def capitalize_first_character(text: str) -> str:
-    """Ensures first character is capitalized"""
-    if text and text[0].islower():
-        text = text[0].upper() + text[1:]
-
-    return text
 
 
 def capitalize_after_punc(text: str) -> str:
@@ -268,13 +274,6 @@ def normalize_uz_domains(text: str) -> str:
         text,
         flags=re.IGNORECASE,
     )
-
-
-def normalize_capitalization(text: str) -> str:
-    """Capitalizes first character, after punctuations [. ! ?] and Uzbek domain"""
-    text = capitalize_first_character(text)
-    text = capitalize_after_punc(text)
-    return text
 
 
 def _get_safe_string_if_nan(text) -> str:

@@ -21,14 +21,12 @@ NORMALIZATION_CONFIGS: Dict[NormalizationLevel, Dict[str, bool] | None] = {
     NormalizationLevel.STRICT: {
         "should_normalize_numbers_to_words": True,
         "should_remove_punctuations": True,
-        "should_normalize_capitalization": False,
         "should_lowercase_text": True,
         "should_remove_ellipsis": True,
     },
     NormalizationLevel.LIGHT: {
         "should_normalize_numbers_to_words": False,
         "should_remove_punctuations": False,
-        "should_normalize_capitalization": True,
         "should_lowercase_text": False,
         "should_remove_ellipsis": False,
     },

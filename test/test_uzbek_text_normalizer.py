@@ -9,13 +9,13 @@ from scripts.uzbek_text_normalizer import (
     normalize_uzbek_apostrophes,
     normalize_annotations,
     normalize_spacing_around_punc,
-    capitalize_first_character,
     capitalize_after_punc,
     normalize_uz_domains,
-    normalize_capitalization,
     remove_special_chars,
     remove_punctuations,
     normalize_text,
+    normalize_double_quotes,
+    normalize_dashes,
 )
 
 
@@ -34,6 +34,7 @@ class TestRemoveNewLines(unittest.TestCase):
 
     def test_no_newlines(self):
         self.assertEqual(remove_new_lines("hello world"), "hello world")
+        self.assertEqual(remove_new_lines("hello \tworld"), "hello \tworld")
 
 
 class TestListMarkers(unittest.TestCase):
@@ -49,14 +50,36 @@ class TestListMarkers(unittest.TestCase):
         )
 
     # Common in books
-    def test_remove_multiple_middle_bullet_points(self):
+    def test_remove_middle_bullet_points_after_punctuation_except_followed_by_dedi(
+        self,
+    ):
         self.assertEqual(
             remove_list_markers("Non dema! — dedi. — nonni otini atama!"),
-            "Non dema!   dedi.   nonni otini atama!",
+            "Non dema! — dedi. nonni otini atama!",
         )
         self.assertEqual(
-            remove_list_markers("Erk – manzilmas, erk – yo‘ldir"),
-            "Erk   manzilmas, erk   yo‘ldir",
+            remove_list_markers("— Olib keldim, o‘rtoq kapitan, kirsinmi? — Kirsin."),
+            "Olib keldim, o‘rtoq kapitan, kirsinmi? Kirsin.",
+        )
+        self.assertEqual(
+            remove_list_markers(
+                "— Qoraquloq, — dedim sekin. — Ana, Qoraquloq! o‘zimning echkim."
+            ),
+            "Qoraquloq, — dedim sekin. Ana, Qoraquloq! o‘zimning echkim.",
+        )
+        self.assertEqual(
+            remove_list_markers("Qanaqasiga ukam bo‘lsin? — dedim iljayib."),
+            "Qanaqasiga ukam bo‘lsin? — dedim iljayib.",
+        )
+        self.assertEqual(
+            remove_list_markers("Kim bilsin, — deb yelka qisdi yigit"),
+            "Kim bilsin, — deb yelka qisdi yigit",
+        )
+        self.assertEqual(
+            remove_list_markers(
+                "Bu mutlaqo asossiz gaplar! - Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi"
+            ),
+            "Bu mutlaqo asossiz gaplar! Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi",
         )
 
     def test_remove_starting_numbered_list(self):
@@ -68,6 +91,69 @@ class TestListMarkers(unittest.TestCase):
     def test_handle_multiple_numbered_lists(self):
         self.assertEqual(
             remove_list_markers("1)2) hello 1. world"), "2) hello 1. world"
+        )
+
+    def test_keep_dashes(self):
+        self.assertEqual(
+            remove_list_markers("Erk – manzilmas, erk – yo‘ldir"),
+            "Erk – manzilmas, erk – yo‘ldir",
+        )
+        self.assertEqual(
+            remove_list_markers("Olimning adashgani — dunyoning buzilgani."),
+            "Olimning adashgani — dunyoning buzilgani.",
+        )
+        self.assertEqual(
+            remove_list_markers("asossiz gaplar! -Shavkat Mirziyoyev"),
+            "asossiz gaplar! -Shavkat Mirziyoyev",
+        )
+        self.assertEqual(
+            remove_list_markers("Asossiz gaplar- Shavkat Mirziyoyev"),
+            "Asossiz gaplar- Shavkat Mirziyoyev",
+        )
+        self.assertEqual(
+            remove_list_markers(
+                "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi."
+            ),
+            "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi.",
+        )
+        self.assertEqual(
+            remove_list_markers("Tashqarida - 5 gradus sovuq"),
+            "Tashqarida - 5 gradus sovuq",
+            "Should keep hyphen if both sides are not letters or punctuation.",
+        )
+
+
+class TestNormalizeDashes(unittest.TestCase):
+    def test_dashes(self):
+        self.assertEqual(
+            normalize_dashes("Ism – insonning bir umrlik hamrohi."),
+            "Ism – insonning bir umrlik hamrohi.",
+        )
+        self.assertEqual(
+            normalize_dashes("Amr etaman: so‘ra! — dedi qirol shosha-pisha."),
+            "Amr etaman: so‘ra! – dedi qirol shosha-pisha.",
+        )
+        self.assertEqual(
+            normalize_dashes("— Voy onajon-a! — dedi ingrab."),
+            "– Voy onajon-a! – dedi ingrab.",
+        )
+        self.assertEqual(
+            normalize_dashes("Kuch ― birlikda."),
+            "Kuch – birlikda.",
+        )
+
+    def keep_hyphens(self):
+        self.assertEqual(
+            normalize_dashes("O‘rtoqlar, o‘lan-laparlar aytmanglar!"),
+            "O‘rtoqlar, o‘lan-laparlar aytmanglar!",
+        )
+        self.assertEqual(
+            normalize_dashes("O‘rtoqlar, o‘lan—laparlar aytmanglar!"),
+            "O‘rtoqlar, o‘lan—laparlar aytmanglar!",
+        )
+        self.assertEqual(
+            normalize_dashes("Tashqarida -5 daraja sovuq."),
+            "Tashqarida -5 daraja sovuq.",
         )
 
 
@@ -109,253 +195,25 @@ class TestNormalizeUzbekApostrophes(unittest.TestCase):
         self.assertEqual(normalize_uzbek_apostrophes("salom"), "salom")
 
 
-class TestRemoveSpecialChars(unittest.TestCase):
-    def test_double_quotation_mark1(self):
+class TestNormalizeDoubleQuotes(unittest.TestCase):
+    def test_double_quotes(self):
         self.assertEqual(
-            remove_special_chars('Uning oldida "tirbandlik" paydo bo\'ldi'),
-            "Uning oldida tirbandlik paydo bo'ldi",
+            normalize_double_quotes("“Milan”ning xursandchiligi uzoqqa cho‘zilmadi."),
+            '"Milan"ning xursandchiligi uzoqqa cho‘zilmadi.',
+        )
+        self.assertEqual(
+            normalize_double_quotes(
+                "Aytmoqchimanki, terma jamoalarimiz «planka»ni yuqori qo‘ydi."
+            ),
+            'Aytmoqchimanki, terma jamoalarimiz "planka"ni yuqori qo‘ydi.',
         )
 
-    def test_double_quotation_mark2(self):
+    def test_keep_single_quotes(self):
         self.assertEqual(
-            remove_special_chars("“Ahmoq!” o'yladim men. Kechikdi!"),
-            "Ahmoq! o'yladim men. Kechikdi!",
-        )
-        self.assertEqual(
-            remove_special_chars("U kelmadi. “Ahmoq! o'yladim men. Kechikdi!"),
-            "U kelmadi. Ahmoq! o'yladim men. Kechikdi!",
-        )
-
-    def test_double_quotation_mark3(self):
-        self.assertEqual(
-            remove_special_chars("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
-            "Hovlini to'ldirib mevali daraxt ekdik, dedi.",
-        )
-        self.assertEqual(
-            remove_special_chars("Ular bunday sharoitda ma'nan «so'nib» qolishadi"),
-            "Ular bunday sharoitda ma'nan so'nib qolishadi",
-        )
-
-    def test_no_apostrophes(self):
-        self.assertEqual(
-            remove_special_chars(
-                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
+            normalize_double_quotes(
+                "Aytmoqchimanki, terma jamoalarimiz 'planka'ni yuqori qo‘ydi."
             ),
-            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
-        )
-
-    def test_remove_colons(self):
-        self.assertEqual(
-            remove_special_chars("Kitob haqida ma'lumot:"), "Kitob haqida ma'lumot"
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Birdan Stalin: «Lavrentiy, chora ko'r», deb qolardi.:"
-            ),
-            "Birdan Stalin Lavrentiy, chora ko'r, deb qolardi.",
-        )
-
-    def test_remove_dashes(self):
-        self.assertEqual(
-            remove_special_chars(
-                "Ot o'ynasa chavandozni maqtaydilar, qilich o'ynasa ― qo'lni."
-            ),
-            "Ot o'ynasa chavandozni maqtaydilar, qilich o'ynasa qo'lni.",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Bu mutlaqo asossiz gaplar! - Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi"
-            ),
-            "Bu mutlaqo asossiz gaplar! Shavkat Mirziyoyev Alisher Qodirov taklifiga munosabat bildirdi",
-        )
-
-    def test_keep_dashes(self):
-        self.assertEqual(
-            remove_special_chars("asossiz gaplar! -Shavkat Mirziyoyev"),
-            "asossiz gaplar! -Shavkat Mirziyoyev",
-        )
-        self.assertEqual(
-            remove_special_chars("Asossiz gaplar- Shavkat Mirziyoyev"),
-            "Asossiz gaplar- Shavkat Mirziyoyev",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi.",
-                remove_ellipsis=True,
-            ),
-            "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi.",
-        )
-        self.assertEqual(
-            remove_special_chars("Tashqarida - 5 gradus sovuq", remove_ellipsis=True),
-            "Tashqarida - 5 gradus sovuq",
-            "Should keep hyphen if both sides are not letters or punctuation.",
-        )
-
-    def test_remove_2dots(self):
-        self.assertEqual(
-            remove_special_chars(
-                "Unda, sen chinovniklarni..! Chinovniklar to'nka!", remove_ellipsis=True
-            ),
-            "Unda, sen chinovniklarni! Chinovniklar to'nka!",
-        )
-        self.assertEqual(
-            remove_special_chars("O'qimaysizmi?..", remove_ellipsis=True),
-            "O'qimaysizmi?",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Voy esim qursin.. Bug'doy nima bo'ldi...", remove_ellipsis=True
-            ),
-            "Voy esim qursin Bug'doy nima bo'ldi",
-        )
-
-    def test_remove_ellipses(self):
-        self.assertEqual(
-            remove_special_chars(
-                "O'lsam, mozorimni kungayda qazing…", remove_ellipsis=True
-            ),
-            "O'lsam, mozorimni kungayda qazing",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Yo'q, qoldi… u qoldi men bilan qoldi…", remove_ellipsis=True
-            ),
-            "Yo'q, qoldi u qoldi men bilan qoldi",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Bundan tashqari... Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar",
-                remove_ellipsis=True,
-            ),
-            "Bundan tashqari Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Ro'moli burchini ushlab, televizorga...", remove_ellipsis=True
-            ),
-            "Ro'moli burchini ushlab, televizorga",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Kel... Deb xotirjamlik bilan gapirish kerak....", remove_ellipsis=True
-            ),
-            "Kel Deb xotirjamlik bilan gapirish kerak",
-        )
-
-    def test_not_remove_ellipses(self):
-        self.assertEqual(
-            remove_special_chars(
-                "O'lsam, mozorimni kungayda qazing…", remove_ellipsis=False
-            ),
-            "O'lsam, mozorimni kungayda qazing…",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Yo'q, qoldi… u qoldi men bilan qoldi…", remove_ellipsis=False
-            ),
-            "Yo'q, qoldi… u qoldi men bilan qoldi…",
-        )
-        self.assertEqual(
-            remove_special_chars(
-                "Kel.. Deb xotirjamlik bilan gapirish kerak....", remove_ellipsis=False
-            ),
-            "Kel.. Deb xotirjamlik bilan gapirish kerak....",
-        )
-
-
-class TestRemovePunctuations(unittest.TestCase):
-    def test_question_mark(self):
-        self.assertEqual(
-            remove_punctuations('Uning oldida "tirbandlik" paydo bo\'ldimi?'),
-            'Uning oldida "tirbandlik" paydo bo\'ldimi',
-        )
-        self.assertEqual(
-            remove_punctuations("Nimalar deyapsan? Esing joyidami?"),
-            "Nimalar deyapsan Esing joyidami",
-        )
-        self.assertEqual(
-            remove_punctuations('"Musulmonman", deb namoz o\'qimaysanmi?!'),
-            '"Musulmonman" deb namoz o\'qimaysanmi',
-        )
-
-    def test_exclamation_mark(self):
-        self.assertEqual(
-            remove_punctuations("“Ahmoq!” o'yladim men. Kechikdi!"),
-            "“Ahmoq” o'yladim men Kechikdi",
-        )
-        self.assertEqual(
-            remove_punctuations("To'xta! Ketma!!!"),
-            "To'xta Ketma",
-        )
-
-    def test_comma(self):
-        self.assertEqual(
-            remove_punctuations("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
-            "«Hovlini to'ldirib mevali daraxt ekdik dedi",
-        )
-        self.assertEqual(
-            remove_punctuations("O'g'lim, ovqatingni yemaysanmi?"),
-            "O'g'lim ovqatingni yemaysanmi",
-        )
-
-    def test_full_stop(self):
-        self.assertEqual(
-            remove_punctuations("Bir nechta. nuqtali gap. tekshiruv."),
-            "Bir nechta nuqtali gap tekshiruv",
-        )
-        self.assertEqual(
-            remove_punctuations("Uyga kirsam, menga baqrayib turar edi."),
-            "Uyga kirsam menga baqrayib turar edi",
-        )
-
-    def test_semi_colon(self):
-        self.assertEqual(
-            remove_punctuations("Bir nechta. nuqtali gap; tekshiruv."),
-            "Bir nechta nuqtali gap tekshiruv",
-        )
-        self.assertEqual(
-            remove_punctuations("Uyga kirsam; menga baqrayib turar edi."),
-            "Uyga kirsam menga baqrayib turar edi",
-        )
-
-    def test_no_punctuations(self):
-        self.assertEqual(
-            remove_punctuations(
-                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
-            ),
-            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
-        )
-        self.assertEqual(
-            remove_punctuations("O'g'lim ovqatingni yemaysanmi"),
-            "O'g'lim ovqatingni yemaysanmi",
-        )
-        self.assertEqual(
-            remove_punctuations(
-                'Андижонда тандирлар "ҳавони ифлослантиряпти" деб топилди'
-            ),
-            'Андижонда тандирлар "ҳавони ифлослантиряпти" деб топилди',
-        )
-
-    def test_multiple_punctuations(self):
-        self.assertEqual(
-            remove_punctuations('"Ketma..." deya yalindi..'),
-            '"Ketma" deya yalindi',
-        )
-        self.assertEqual(
-            remove_punctuations("Uyga kirsam,,, menga baqrayib turar edi!!!"),
-            "Uyga kirsam menga baqrayib turar edi",
-        )
-        self.assertEqual(
-            remove_punctuations("Nimalar deyapsan? Esing joyidami???"),
-            "Nimalar deyapsan Esing joyidami",
-        )
-        self.assertEqual(
-            remove_punctuations("Nimalar deyapsan? Seni esing joyida emas?!?!"),
-            "Nimalar deyapsan Seni esing joyida emas",
-        )
-        self.assertEqual(
-            remove_punctuations('"Ketma.;" deya yalindi..'),
-            '"Ketma" deya yalindi',
+            "Aytmoqchimanki, terma jamoalarimiz 'planka'ni yuqori qo‘ydi.",
         )
 
 
@@ -472,6 +330,45 @@ class TestCleanWhitespaces(unittest.TestCase):
         self.assertEqual(remove_whitespaces("   \t  "), "")
 
 
+class TestNormalizeUzDomains(unittest.TestCase):
+    def test_with_uz_domain_normalization(self):
+        result = normalize_uz_domains("qalampir.uz sayti")
+        self.assertEqual(result, "Qalampir uz sayti")
+
+        result = normalize_uz_domains("Qalampir.uz sayti")
+        self.assertEqual(result, "Qalampir uz sayti")
+
+        result = normalize_uz_domains("Muzaffar Komilov kun.uz bilan suhbatda aynan")
+        self.assertEqual(result, "Muzaffar Komilov Kun uz bilan suhbatda aynan")
+
+    def test_without_uz_domain_normalization(self):
+        result = normalize_uz_domains("qalampir.com sayti")
+        self.assertEqual(result, "qalampir.com sayti")
+
+        result = normalize_uz_domains("qalampir. uz sayti")
+        self.assertEqual(result, "qalampir. uz sayti")
+
+        result = normalize_uz_domains("qalampir  .uz sayti")
+        self.assertEqual(result, "qalampir  .uz sayti")
+
+
+class TestCapitalizeUzDomain(unittest.TestCase):
+    def test_capitalizes_uz_domain(self):
+        result = normalize_uz_domains("qalampir.uz")
+        self.assertEqual(result, "Qalampir uz")
+
+    def test_handles_uppercase_domain(self):
+        result = normalize_uz_domains("QALAMPIR.UZ")
+        self.assertEqual(result, "Qalampir uz")
+
+    def test_no_uz_domain_returns_original(self):
+        self.assertEqual(normalize_uz_domains("hello world"), "hello world")
+
+    def test_mixed_case_domain(self):
+        result = normalize_uz_domains("QaLaMpIr.uz")
+        self.assertEqual(result, "Qalampir uz")
+
+
 class TestNormalizeSpacingAroundPunc(unittest.TestCase):
     def test_removes_space_before_period(self):
         self.assertEqual(normalize_spacing_around_punc("hello ."), "hello.")
@@ -524,78 +421,288 @@ class TestCapitalizeAfterPunc(unittest.TestCase):
         result = capitalize_after_punc(". Hello world")
         self.assertEqual(result, ". Hello world")
 
-
-class TestCapitalizeFirstCharacter(unittest.TestCase):
-    def test_capitalizes_lowercase_first_letter(self):
-        self.assertEqual(capitalize_first_character("hello"), "Hello")
-
-    def test_keeps_uppercase_first_letter(self):
-        self.assertEqual(capitalize_first_character("Hello"), "Hello")
-
-    def test_handles_empty_string(self):
-        self.assertEqual(capitalize_first_character(""), "")
-
-    def test_handles_single_character(self):
-        self.assertEqual(capitalize_first_character("a"), "A")
-
-    def test_only_capitalizes_first_character(self):
-        self.assertEqual(capitalize_first_character("hello WORLD"), "Hello WORLD")
-
-    def test_handles_non_alphabetic_first_character(self):
-        self.assertEqual(capitalize_first_character("123 hello"), "123 hello")
-
-
-class TestCapitalizeUzDomain(unittest.TestCase):
-    def test_capitalizes_uz_domain(self):
-        result = normalize_uz_domains("qalampir.uz")
-        self.assertEqual(result, "Qalampir uz")
-
-    def test_handles_uppercase_domain(self):
-        result = normalize_uz_domains("QALAMPIR.UZ")
-        self.assertEqual(result, "Qalampir uz")
-
-    def test_no_uz_domain_returns_original(self):
-        self.assertEqual(normalize_uz_domains("hello world"), "hello world")
-
-    def test_mixed_case_domain(self):
-        result = normalize_uz_domains("QaLaMpIr.uz")
-        self.assertEqual(result, "Qalampir uz")
-
-
-class TestNormalizeCapitalization(unittest.TestCase):
-    def test_capitalizes_first_character(self):
-        result = normalize_capitalization("hello world")
-        self.assertEqual(result, "Hello world")
-
-    def test_empty_string(self):
-        result = normalize_capitalization("")
-        self.assertEqual(result, "")
-
     def test_capitalization_after_comma_should_not_change(self):
-        result = normalize_capitalization("– Tur, Mansur ketamiz.")
+        result = capitalize_after_punc("– Tur, Mansur ketamiz.")
         self.assertEqual(result, "– Tur, Mansur ketamiz.")
 
+    def test_capitalizes_first_character(self):
+        result = capitalize_after_punc("hello world")
+        self.assertEqual(result, "hello world")
 
-class TestNormalizeUzDomains(unittest.TestCase):
-    def test_with_uz_domain_normalization(self):
-        result = normalize_uz_domains("qalampir.uz sayti")
-        self.assertEqual(result, "Qalampir uz sayti")
+    def test_empty_string(self):
+        result = capitalize_after_punc("")
+        self.assertEqual(result, "")
 
-        result = normalize_uz_domains("Qalampir.uz sayti")
-        self.assertEqual(result, "Qalampir uz sayti")
 
-        result = normalize_uz_domains("Muzaffar Komilov kun.uz bilan suhbatda aynan")
-        self.assertEqual(result, "Muzaffar Komilov Kun uz bilan suhbatda aynan")
+class TestRemoveSpecialChars(unittest.TestCase):
+    def test_remove_special_chars(self):
+        self.assertEqual(
+            remove_special_chars("Xonadondan qattiq-quruq gap tash­qariga chiqmasdi."),
+            "Xonadondan qattiq-quruq gap tashqariga chiqmasdi.",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Bizning shah­rimizda chet elni koʻrgan, qandaydir bir chet til­ni bilgan bitta odam bor"
+            ),
+            "Bizning shahrimizda chet elni koʻrgan, qandaydir bir chet tilni bilgan bitta odam bor",
+        )
 
-    def test_without_uz_domain_normalization(self):
-        result = normalize_uz_domains("qalampir.com sayti")
-        self.assertEqual(result, "qalampir.com sayti")
+    def keep_some_special_chars(self):
+        self.assertEqual(
+            remove_special_chars("C++ni o'rganish davomida..."),
+            "C++ni o'rganish davomida...",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Foydalanuvchilar o‘z noroziliklarini #Uninstallsnapchat heshtegi ostida bildirmoqda."
+            ),
+            "Foydalanuvchilar o‘z noroziliklarini #Uninstallsnapchat heshtegi ostida bildirmoqda.",
+        )
+        self.assertEqual(
+            remove_special_chars(
+                "Cake&Bakega tashrif buyuring va hayotingizni yanada shirinroq qiling!"
+            ),
+            "Cake&Bakega tashrif buyuring va hayotingizni yanada shirinroq qiling!",
+        )
+        self.assertEqual(remove_special_chars("No specia char."), "No specia char.")
 
-        result = normalize_uz_domains("qalampir. uz sayti")
-        self.assertEqual(result, "qalampir. uz sayti")
 
-        result = normalize_uz_domains("qalampir  .uz sayti")
-        self.assertEqual(result, "qalampir  .uz sayti")
+class TestRemovePunctuations(unittest.TestCase):
+    def test_question_mark(self):
+        self.assertEqual(
+            remove_punctuations('Uning oldida "tirbandlik" paydo bo\'ldimi?'),
+            "Uning oldida tirbandlik paydo bo'ldimi",
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Esing joyidami?"),
+            "Nimalar deyapsan Esing joyidami",
+        )
+        self.assertEqual(
+            remove_punctuations('"Musulmonman", deb namoz o\'qimaysanmi?!'),
+            "Musulmonman deb namoz o'qimaysanmi",
+        )
+
+    def test_exclamation_mark(self):
+        self.assertEqual(
+            remove_punctuations("“Ahmoq!” o'yladim men. Kechikdi!"),
+            "Ahmoq o'yladim men Kechikdi",
+        )
+        self.assertEqual(
+            remove_punctuations("To'xta! Ketma!!!"),
+            "To'xta Ketma",
+        )
+
+    def test_comma(self):
+        self.assertEqual(
+            remove_punctuations("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
+            "Hovlini to'ldirib mevali daraxt ekdik dedi",
+        )
+        self.assertEqual(
+            remove_punctuations("O'g'lim, ovqatingni yemaysanmi?"),
+            "O'g'lim ovqatingni yemaysanmi",
+        )
+
+    def test_full_stop(self):
+        self.assertEqual(
+            remove_punctuations("Bir nechta. nuqtali gap. tekshiruv."),
+            "Bir nechta nuqtali gap tekshiruv",
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam, menga baqrayib turar edi."),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+
+    def test_semi_colon(self):
+        self.assertEqual(
+            remove_punctuations("Bir nechta. nuqtali gap; tekshiruv."),
+            "Bir nechta nuqtali gap tekshiruv",
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam; menga baqrayib turar edi."),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+
+    def test_no_punctuations(self):
+        self.assertEqual(
+            remove_punctuations(
+                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
+            ),
+            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
+        )
+        self.assertEqual(
+            remove_punctuations("O'g'lim ovqatingni yemaysanmi"),
+            "O'g'lim ovqatingni yemaysanmi",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "Андижонда тандирлар ҳавони ифлослантиряпти деб топилди"
+            ),
+            "Андижонда тандирлар ҳавони ифлослантиряпти деб топилди",
+        )
+
+    def test_multiple_punctuations(self):
+        self.assertEqual(
+            remove_punctuations('"Ketma..." deya yalindi..'),
+            "Ketma... deya yalindi",
+        )
+        self.assertEqual(
+            remove_punctuations("Uyga kirsam,,, menga baqrayib turar edi!!!"),
+            "Uyga kirsam menga baqrayib turar edi",
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Esing joyidami???"),
+            "Nimalar deyapsan Esing joyidami",
+        )
+        self.assertEqual(
+            remove_punctuations("Nimalar deyapsan? Seni esing joyida emas?!?!"),
+            "Nimalar deyapsan Seni esing joyida emas",
+        )
+        self.assertEqual(
+            remove_punctuations('"Ketma.;" deya yalindi..'),
+            "Ketma deya yalindi",
+        )
+
+    def test_double_quotation_mark1(self):
+        self.assertEqual(
+            remove_punctuations('Uning oldida "tirbandlik" paydo bo\'ldi'),
+            "Uning oldida tirbandlik paydo bo'ldi",
+        )
+        self.assertEqual(
+            remove_punctuations('Uning oldida "tirbandlik" paydo bo\'ldi'),
+            "Uning oldida tirbandlik paydo bo'ldi",
+        )
+
+    def test_double_quotation_mark2(self):
+        self.assertEqual(
+            remove_punctuations("“Ahmoq!” o'yladim men. Kechikdi!"),
+            "Ahmoq o'yladim men Kechikdi",
+        )
+        self.assertEqual(
+            remove_punctuations("U kelmadi. “Ahmoq! o'yladim men. Kechikdi!"),
+            "U kelmadi Ahmoq o'yladim men Kechikdi",
+        )
+
+    def test_double_quotation_mark3(self):
+        self.assertEqual(
+            remove_punctuations("«Hovlini to'ldirib mevali daraxt ekdik, dedi."),
+            "Hovlini to'ldirib mevali daraxt ekdik dedi",
+        )
+        self.assertEqual(
+            remove_punctuations("Ular bunday sharoitda ma'nan «so'nib» qolishadi"),
+            "Ular bunday sharoitda ma'nan so'nib qolishadi",
+        )
+
+    def test_no_apostrophes(self):
+        self.assertEqual(
+            remove_punctuations(
+                "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi"
+            ),
+            "Shu zahoti yana bir idish gumburlab portladi va Qurbonni ham jarohatladi",
+        )
+
+    def test_remove_colons(self):
+        self.assertEqual(
+            remove_punctuations("Kitob haqida ma'lumot:"), "Kitob haqida ma'lumot"
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "Birdan Stalin: «Lavrentiy, chora ko'r», deb qolardi.:"
+            ),
+            "Birdan Stalin Lavrentiy chora ko'r deb qolardi",
+        )
+
+    def test_remove_dashes(self):
+        self.assertEqual(
+            remove_punctuations("Mening uyim ― mening qo'rg'onim."),
+            "Mening uyim mening qo'rg'onim",
+        )
+        self.assertEqual(
+            remove_punctuations("Ism – insonning bir umrlik hamrohi."),
+            "Ism insonning bir umrlik hamrohi",
+        )
+        self.assertEqual(
+            remove_punctuations("Ism - insonning bir umrlik hamrohi."),
+            "Ism insonning bir umrlik hamrohi",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "— Qoraquloq, — dedim sekin. — Ana, Qoraquloq! o‘zimning echkim."
+            ),
+            "Qoraquloq dedim sekin Ana Qoraquloq o‘zimning echkim",
+        )
+
+    def test_keep_hyphen_if_not_followed_by_letter(self):
+        self.assertEqual(
+            remove_punctuations(
+                "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi."
+            ),
+            "Yuziga kelgan ketma-ket zarbalar uni shoshiltirib qo'ydi",
+        )
+        self.assertEqual(
+            remove_punctuations("Tashqarida - 5 gradus sovuq"),
+            "Tashqarida - 5 gradus sovuq",
+        )
+
+    def test_always_remove_2dots(self):
+        self.assertEqual(
+            remove_punctuations(
+                "Unda, sen chinovniklarni..! Chinovniklar to'nka!",
+                remove_ellipsis=False,
+            ),
+            "Unda sen chinovniklarni Chinovniklar to'nka",
+        )
+        self.assertEqual(
+            remove_punctuations("O'qimaysizmi?..", remove_ellipsis=True),
+            "O'qimaysizmi",
+        )
+        self.assertEqual(
+            remove_punctuations("Voy esim qursin.. Bug'doy nima bo'ldi..."),
+            "Voy esim qursin Bug'doy nima bo'ldi...",
+        )
+
+    def test_conversation_speech_keep_ellipses(self):
+        self.assertEqual(
+            remove_punctuations("O'lsam, mozorimni kungayda qazing…"),
+            "O'lsam mozorimni kungayda qazing...",
+        )
+        self.assertEqual(
+            remove_punctuations("Yo'q, qoldi… u qoldi men bilan qoldi…"),
+            "Yo'q qoldi... u qoldi men bilan qoldi...",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "Bundan tashqari... Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar"
+            ),
+            "Bundan tashqari... Biz oz emas-ko'p emas millionlab onalarni ularning orasida yosh kelinchaklar",
+        )
+        self.assertEqual(
+            remove_punctuations("Ro'moli burchini ushlab, televizorga..."),
+            "Ro'moli burchini ushlab televizorga...",
+        )
+        self.assertEqual(
+            remove_punctuations("Kel... Deb xotirjamlik bilan gapirish kerak...."),
+            "Kel... Deb xotirjamlik bilan gapirish kerak...",
+        )
+
+    def test_read_speech_remove_ellipsis(self):
+        self.assertEqual(
+            remove_punctuations(
+                "O'lsam, mozorimni kungayda qazing…", remove_ellipsis=True
+            ),
+            "O'lsam mozorimni kungayda qazing",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "Yo'q, qoldi… u qoldi men bilan qoldi…", remove_ellipsis=True
+            ),
+            "Yo'q qoldi u qoldi men bilan qoldi",
+        )
+        self.assertEqual(
+            remove_punctuations(
+                "Kel.. Deb xotirjamlik bilan gapirish kerak....", remove_ellipsis=True
+            ),
+            "Kel Deb xotirjamlik bilan gapirish kerak",
+        )
 
 
 class TestIntegration(unittest.TestCase):
@@ -614,23 +721,27 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = number_to_uzbek_word.normalize(text)
         text = remove_list_markers(text)
+        text = normalize_dashes(text)
         text = normalize_uzbek_apostrophes(text)
+        text = normalize_double_quotes(text)
         text = normalize_annotations(text)
+        text = remove_whitespaces(text)
         text = normalize_uz_domains(text)
         text = normalize_spacing_around_punc(text)
-        text = remove_special_chars(text, remove_ellipsis=True)
-        text = remove_punctuations(text)
+        text = capitalize_after_punc(text)
+        text = remove_special_chars(text)
+        text = remove_punctuations(text, remove_ellipsis=True)
         text = text.lower()
         text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
-            "rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan o'n to'qqizinchi avgust ya'ni andijonlik mulozimlarning fikricha somsapazlar havoni ifloslantirayotgan ekan (random noise) shuning uchun ularning tandirini buzish kerak ekan shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi hikmatullo dadaxonov ham aks etgan u buzish ishlariga boshqa mas'ullar bilan birga uch butun nol besh foizga shaxsan (oddiy qavs ichida gap) o'zi bosh-qosh bo'lib turgan voqea katta shov-shuvni keltirib chiqargach [annotatsiya] video va rasmlar hokimlik kanalidan darhol o'chirildi viloyat hokimligi tezda bayonot bilan chiqib dadaxonovga hayfsan berilganini ma'lum qildi",
+            "rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan o'n to'qqizinchi avgust ya'ni andijonlik mulozimlarning fikricha somsapazlar havoni ifloslantirayotgan ekan (random noise) shuning uchun ularning tandirini buzish kerak ekan shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman #hokimi hikmatullo dadaxonov ham aks etgan u buzish ishlariga boshqa mas'ullar bilan birga uch butun nol besh foizga shaxsan (oddiy qavs ichida gap) o'zi bosh-qosh bo'lib turgan voqea katta shov-shuvni keltirib chiqargach [annotatsiya] video va rasmlar hokimlik kanalidan darhol o'chirildi viloyat hokimligi tezda bayonot bilan chiqib dadaxonovga hayfsan berilganini ma'lum qildi",
         )
 
     def test_case_sensitive_asr_normalization_pipeline(self):
         text = """
-        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik mulozimlarning kun.uz fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan. 19-avgust
+        Rasmiy xabarda bu ishlar : “havo ifloslanishining oldini {olish} maqsadidagi reyd tadbirlari” deb atalgan.ya’ni andijonlik - mulozimlarning kun.uz fikricha, somsapazlar havoni ifloslantirayotgan ekan.  shuning uchun ularning tandirini buzish kerak ekan. 19-avgust
 
         Shahrixon tumani hokimligi videoga qo‘shib e’lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan.U buzish  ishlariga boshqa mas’ullar bilan < birga,shaxsan o‘zi bosh-qosh bo‘lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o‘chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma’lum qildi.  
         """
@@ -640,23 +751,25 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = number_to_uzbek_word.normalize(text)
         text = remove_list_markers(text)
+        text = normalize_dashes(text)
         text = normalize_uzbek_apostrophes(text)
+        text = normalize_double_quotes(text)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_uz_domains(text)
         text = normalize_spacing_around_punc(text)
-        text = normalize_capitalization(text)
+        text = capitalize_after_punc(text)
         text = remove_special_chars(text)
         text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
-            "Rasmiy xabarda bu ishlar havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari deb atalgan. Ya'ni andijonlik mulozimlarning Kun uz fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. O'n to'qqizinchi avgust Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
+            "Rasmiy xabarda bu ishlar: \"havo ifloslanishining oldini olish maqsadidagi reyd tadbirlari\" deb atalgan. Ya'ni andijonlik – mulozimlarning Kun uz fikricha, somsapazlar havoni ifloslantirayotgan ekan. Shuning uchun ularning tandirini buzish kerak ekan. O'n to'qqizinchi avgust Shahrixon tumani hokimligi videoga qo'shib e'lon qilgan fotojamlanmada tuman hokimi Hikmatullo Dadaxonov ham aks etgan. U buzish ishlariga boshqa mas'ullar bilan birga, shaxsan o'zi bosh-qosh bo'lib turgan. Voqea katta shov-shuvni keltirib chiqargach, video va rasmlar hokimlik kanalidan darhol o'chirildi. Viloyat hokimligi tezda bayonot bilan chiqib, Dadaxonovga hayfsan berilganini ma'lum qildi.",
         )
 
     def test_case_extended_number_normalization_pipeline(self):
         text = """
-        Yana bir jihati, maktab-internatning manzili – Izboskan tumani, To‘rtko‘l shaharchasi, A.Navoiy ko‘chasi, 25-uyda, g‘oliblar esa xuddi shu ko‘chadagi 41A-uyda joylashgan.
+        Yana bir jihati, maktab-internatning manzili ― Izboskan tumani, To‘rtko‘l shaharchasi, A.Navoiy ko‘chasi, 25-uyda, g‘oliblar esa xuddi shu ko‘chadagi 41A-uyda joylashgan.
 
         Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo‘yicha ikkita tanlov o‘tkazdi. 1- xaridning boshlang‘ich qiymati 276 mln so‘m, 2-siniki esa 79 mln. so‘m etib belgilangan. Ikki xaridda ham Gree Air Prom, “Stroy biznes servis energiya”, Clivent va Gelios Line Technology MCHJlari ishtirok etgan.
   
@@ -670,18 +783,20 @@ class TestIntegration(unittest.TestCase):
         text = remove_new_lines(text)
         text = number_to_uzbek_word.normalize(text)
         text = remove_list_markers(text)
+        text = normalize_dashes(text)
         text = normalize_uzbek_apostrophes(text)
+        text = normalize_double_quotes(text)
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_uz_domains(text)
         text = normalize_spacing_around_punc(text)
-        text = normalize_capitalization(text)
+        text = capitalize_after_punc(text)
         text = remove_special_chars(text)
         text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
-            "Yana bir jihati, maktab-internatning manzili Izboskan tumani, To'rtko'l shaharchasi, A. Navoiy ko'chasi, yigirma beshinchi uyda, g'oliblar esa xuddi shu ko'chadagi qirq bir A-uyda joylashgan. Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo'yicha ikkita tanlov o'tkazdi. Bir- xaridning boshlang'ich qiymati ikki yuz yetmish olti million so'm, ikkinchi siniki esa yetmish to'qqiz million so'm etib belgilangan. Ikki xaridda ham Gree Air Prom, Stroy biznes servis energiya, Clivent va Gelios Line Technology MCHJlari ishtirok etgan. Ikki ming yigirma beshinchi yil yanvar-noyabr oylarida so'm almashuv kursi yetti butun besh foizga mustahkamlandi. Markaziy bank tahliliga ko'ra, bunga qator omillar ta'sir ko'rsatdi. So'm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul o'tkazmalari keskin o'sgani muhim rol o'ynagan. Ya'ni yanvar-noyabr oylarida O'zbekistonga muhojirlardan o'n yetti butun uch dollar milliard kelib tushgan (ikki ming yigirma to'rtinchi yil mos davridagidan yigirma besh foiz ko'p). Bu ichki valyuta bozoridagi taklifni rag'batlantirib, milliy valyuta qadri mustahkamlanishi jiddiy ta'sir etgan.",
+            "Yana bir jihati, maktab-internatning manzili – Izboskan tumani, To'rtko'l shaharchasi, A. Navoiy ko'chasi, yigirma beshinchi uyda, g'oliblar esa xuddi shu ko'chadagi qirq bir A-uyda joylashgan. Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo'yicha ikkita tanlov o'tkazdi. Bir– xaridning boshlang'ich qiymati ikki yuz yetmish olti million so'm, ikkinchi siniki esa yetmish to'qqiz million so'm etib belgilangan. Ikki xaridda ham Gree Air Prom, \"Stroy biznes servis energiya\", Clivent va Gelios Line Technology MCHJlari ishtirok etgan. Ikki ming yigirma beshinchi yil yanvar-noyabr oylarida so'm almashuv kursi yetti butun besh foizga mustahkamlandi. Markaziy bank tahliliga ko'ra, bunga qator omillar ta'sir ko'rsatdi. So'm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul o'tkazmalari keskin o'sgani muhim rol o'ynagan. Ya'ni yanvar-noyabr oylarida O'zbekistonga muhojirlardan o'n yetti butun uch dollar milliard kelib tushgan (ikki ming yigirma to'rtinchi yil mos davridagidan yigirma besh foiz ko'p). Bu ichki valyuta bozoridagi taklifni rag'batlantirib, milliy valyuta qadri mustahkamlanishi jiddiy ta'sir etgan.",
         )
 
     def test_capitalization_pipeline(self):
@@ -694,13 +809,13 @@ class TestIntegration(unittest.TestCase):
         text = normalize_annotations(text)
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
-        text = normalize_capitalization(text)
-        text = remove_special_chars(text, remove_ellipsis=True)
+        text = capitalize_after_punc(text)
+        text = remove_special_chars(text)
         text = remove_whitespaces(text)
 
         self.assertEqual(
             text,
-            "Tur, Mansur ketamiz! Vaqt ketgani qoldi. Odam bo'lmas ekan bu",
+            "Tur, Mansur ketamiz! Vaqt ketgani qoldi. Odam bo'lmas ekan bu...",
         )
 
     def test_uzbek_text_with_various_apostrophes(self):
@@ -713,9 +828,9 @@ class TestIntegration(unittest.TestCase):
         text = "   salom  ,  dunyo   !   qalaysan   ?  "
         text = remove_whitespaces(text)
         text = normalize_spacing_around_punc(text)
-        text = capitalize_first_character(text)
+        text = capitalize_after_punc(text)
 
-        self.assertEqual(text, "Salom, dunyo! qalaysan?")
+        self.assertEqual(text, "salom, dunyo! Qalaysan?")
 
     def test_nan_or_empty_string(self):
         text = " \t  "
