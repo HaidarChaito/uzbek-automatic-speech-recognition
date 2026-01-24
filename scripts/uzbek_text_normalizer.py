@@ -123,8 +123,10 @@ def remove_list_markers(text: str) -> str:
 
 
 def normalize_dashes(text):
-    # Normalizes all dashes that followed by word into one type. Avoids cases with numbers: Tashqarida -5 gradus.
-    text = re.sub(r"[―‒⸺—–-] +([a-zA-Z])", r"– \1", text)
+    # Normalize all dashes at the begging
+    text = re.sub(r"^\s*[―‒⸺—–-] +([a-zA-Z])", r"– \1", text)
+    # Normalizes all dashes in between words into one type. Avoids cases with numbers: Tashqarida -5 gradus.
+    text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 – \2", text)
     return text
 
 
@@ -241,9 +243,11 @@ def remove_punctuations(text: str, remove_ellipsis: bool = False):
     for quote in double_quotes:
         text = text.replace(quote, "")
 
+    # Normalize all dashes at the begging
+    text = re.sub(r"^\s*[―‒⸺—–-] +([a-zA-Z])", r"\1", text)
     # Removes dashes and hyphens acting as dashes (space on both sides) e.g. Mening uyim ― mening qo'rg'onim.
     # Avoids cases with numbers e.g. 2021 - 2025 or "Tashqarida - 5 gradus sovuq"
-    text = re.sub(r"[―‒⸺—–-] +([a-zA-Z])", r"\1", text)
+    text = re.sub(r"([a-zA-Z!,.;?]) +[―‒⸺—–-] +([a-zA-Z])", r"\1 \2", text)
 
     if remove_ellipsis:
         text = text.replace("…", "")  # Single ellipsis character

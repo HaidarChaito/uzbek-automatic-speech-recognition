@@ -155,6 +155,12 @@ class TestNormalizeDashes(unittest.TestCase):
             normalize_dashes("Tashqarida -5 daraja sovuq."),
             "Tashqarida -5 daraja sovuq.",
         )
+        self.assertEqual(
+            normalize_dashes(
+                "rasmga qaytib tushirib olamiz mazkur ixtisoslashtirilgan maktabning besh- va o'ninchi sinfida o'qish istagini bildirgan"
+            ),
+            "rasmga qaytib tushirib olamiz mazkur ixtisoslashtirilgan maktabning besh- va o'ninchi sinfida o'qish istagini bildirgan",
+        )
 
 
 class TestNormalizeUzbekApostrophes(unittest.TestCase):
@@ -642,6 +648,12 @@ class TestRemovePunctuations(unittest.TestCase):
             remove_punctuations("Tashqarida - 5 gradus sovuq"),
             "Tashqarida - 5 gradus sovuq",
         )
+        self.assertEqual(
+            remove_punctuations(
+                "rasmga qaytib tushirib olamiz mazkur ixtisoslashtirilgan maktabning besh- va o'ninchi sinfida o'qish istagini bildirgan"
+            ),
+            "rasmga qaytib tushirib olamiz mazkur ixtisoslashtirilgan maktabning besh- va o'ninchi sinfida o'qish istagini bildirgan",
+        )
 
     def test_always_remove_2dots(self):
         self.assertEqual(
@@ -796,7 +808,7 @@ class TestIntegration(unittest.TestCase):
 
         self.assertEqual(
             text,
-            "Yana bir jihati, maktab-internatning manzili – Izboskan tumani, To'rtko'l shaharchasi, A. Navoiy ko'chasi, yigirma beshinchi uyda, g'oliblar esa xuddi shu ko'chadagi qirq bir A-uyda joylashgan. Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo'yicha ikkita tanlov o'tkazdi. Bir– xaridning boshlang'ich qiymati ikki yuz yetmish olti million so'm, ikkinchi siniki esa yetmish to'qqiz million so'm etib belgilangan. Ikki xaridda ham Gree Air Prom, \"Stroy biznes servis energiya\", Clivent va Gelios Line Technology MCHJlari ishtirok etgan. Ikki ming yigirma beshinchi yil yanvar-noyabr oylarida so'm almashuv kursi yetti butun besh foizga mustahkamlandi. Markaziy bank tahliliga ko'ra, bunga qator omillar ta'sir ko'rsatdi. So'm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul o'tkazmalari keskin o'sgani muhim rol o'ynagan. Ya'ni yanvar-noyabr oylarida O'zbekistonga muhojirlardan o'n yetti butun uch dollar milliard kelib tushgan (ikki ming yigirma to'rtinchi yil mos davridagidan yigirma besh foiz ko'p). Bu ichki valyuta bozoridagi taklifni rag'batlantirib, milliy valyuta qadri mustahkamlanishi jiddiy ta'sir etgan.",
+            "Yana bir jihati, maktab-internatning manzili – Izboskan tumani, To'rtko'l shaharchasi, A. Navoiy ko'chasi, yigirma beshinchi uyda, g'oliblar esa xuddi shu ko'chadagi qirq bir A-uyda joylashgan. Gubkin nomidagi Rossiya davlat neft va gaz universitetining Toshkent shahridagi filiali konditsioner xarid qilish bo'yicha ikkita tanlov o'tkazdi. Bir- xaridning boshlang'ich qiymati ikki yuz yetmish olti million so'm, ikkinchi siniki esa yetmish to'qqiz million so'm etib belgilangan. Ikki xaridda ham Gree Air Prom, \"Stroy biznes servis energiya\", Clivent va Gelios Line Technology MCHJlari ishtirok etgan. Ikki ming yigirma beshinchi yil yanvar-noyabr oylarida so'm almashuv kursi yetti butun besh foizga mustahkamlandi. Markaziy bank tahliliga ko'ra, bunga qator omillar ta'sir ko'rsatdi. So'm qadri sezilarli ortishida avvalo, migrantlar yuborgan pul o'tkazmalari keskin o'sgani muhim rol o'ynagan. Ya'ni yanvar-noyabr oylarida O'zbekistonga muhojirlardan o'n yetti butun uch dollar milliard kelib tushgan (ikki ming yigirma to'rtinchi yil mos davridagidan yigirma besh foiz ko'p). Bu ichki valyuta bozoridagi taklifni rag'batlantirib, milliy valyuta qadri mustahkamlanishi jiddiy ta'sir etgan.",
         )
 
     def test_capitalization_pipeline(self):
