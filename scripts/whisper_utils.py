@@ -77,8 +77,8 @@ def load_model(
     model_path: str,
     dataset: dict,
     data_collator,
-    eval_batch_size=256,
     base_model_name="openai/whisper-small",
+    eval_batch_size=128,
 ):
     """
     Load a saved model from disk.
@@ -87,8 +87,8 @@ def load_model(
         model_path: Path to the saved model directory
         dataset: Dataset dictionary with 'validation' and 'test' splits
         data_collator: Whisper data collator (prepares data and converts to PyTorch Tensor)
-        eval_batch_size: Batch size used in evaluation
         base_model_name: Original model name to load processor from
+        eval_batch_size: Batch size used in evaluation
 
     Returns:
         Tuple of (model, trainer, processor)
@@ -144,10 +144,15 @@ def load_checkpoint(
     dataset: dict,
     data_collator,
     base_model_name="openai/whisper-small",
+    eval_batch_size=128,
 ):
     """Load a specific checkpoint."""
     return load_model(
-        checkpoint_path, dataset, data_collator, base_model_name=base_model_name
+        checkpoint_path,
+        dataset,
+        data_collator,
+        base_model_name=base_model_name,
+        eval_batch_size=eval_batch_size,
     )
 
 
@@ -257,7 +262,7 @@ def evaluate_by_dataset(trainer, processor, dataset_split, dataset_name="validat
 
     # Compute metrics for each dataset
     results = {
-        "overall": similarity_metrics.calculate(labels_str, preds_str),
+        "overall": similarity_metrics.calculate_batch(labels_str, preds_str),
         "by_dataset": {},
     }
 
@@ -266,7 +271,7 @@ def evaluate_by_dataset(trainer, processor, dataset_split, dataset_name="validat
         refs = data["references"]
         preds = data["predictions"]
 
-        results["by_dataset"][ds_name] = similarity_metrics.calculate(refs, preds)
+        results["by_dataset"][ds_name] = similarity_metrics.calculate_batch(refs, preds)
 
     print_evaluation_results(results, dataset_name.upper(), group_by_dataset=True)
 
