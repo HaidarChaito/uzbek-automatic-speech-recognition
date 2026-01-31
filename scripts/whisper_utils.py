@@ -202,8 +202,7 @@ def print_evaluation_results(
         # Overall metrics
         print("\nOVERALL METRICS")
         print("-" * 80)
-        overall = metrics["overall"]
-        _print_evaluation_result(overall)
+        _print_evaluation_result(metrics)
 
         # Per-dataset metrics
         print(f"\n{'=' * 80}")
@@ -224,7 +223,65 @@ def print_evaluation_results(
     print("=" * 80 + "\n")
 
 
-def evaluate_by_dataset(trainer, processor, dataset_split, dataset_name="validation"):
+def evaluate_by_dataset(predictions, processor, dataset_split):
+    """
+    Evaluate model predictions with per-dataset metric breakdown.
+
+    Args:
+        predictions: PredictionOutput from trainer.predict() containing predictions and label_ids
+        processor: WhisperProcessor for decoding token IDs to text
+        dataset_split: Dataset with 'dataset' column for grouping metrics
+
+    Returns:
+        Dict with overall metrics and per-dataset breakdown:
+        {
+            "wer": float, "cer": float, ...,
+            "by_dataset": {
+                "common_voice": {"wer": float, "cer": float, ...},
+                "news": {"wer": float, "cer": float, ...},
+                ...
+            }
+        }
+    """
+    from collections import defaultdict
+
+    # Decode predictions and labels
+    pred_ids = predictions.predictions
+    label_ids = predictions.label_ids
+    label_ids[label_ids == -100] = processor.tokenizer.pad_token_id
+
+    labels_str = processor.batch_decode(label_ids, skip_special_tokens=True)
+    preds_str = processor.batch_decode(pred_ids, skip_special_tokens=True)
+
+    # Get dataset labels (common_voice, uzbek_voice, ..)
+    dataset_labels = dataset_split["dataset"]
+
+    # Group by dataset
+    dataset_groups = defaultdict(lambda: {"predictions": [], "references": []})
+
+    for pred, label, ds_name in zip(preds_str, labels_str, dataset_labels):
+        dataset_groups[ds_name]["predictions"].append(pred)
+        dataset_groups[ds_name]["references"].append(label)
+
+    # Compute metrics for each dataset
+    results = {
+        **similarity_metrics.calculate_batch(labels_str, preds_str),
+        "by_dataset": {},
+    }
+
+    # Per-dataset metrics
+    for ds_name, data in dataset_groups.items():
+        refs = data["references"]
+        preds = data["predictions"]
+
+        results["by_dataset"][ds_name] = similarity_metrics.calculate_batch(refs, preds)
+
+    return results
+
+
+def evaluate_by_dataset_with_trainer(
+    trainer, processor, dataset_split, dataset_name="validation"
+):
     """
     Evaluate model and group results by dataset.
 
@@ -237,42 +294,10 @@ def evaluate_by_dataset(trainer, processor, dataset_split, dataset_name="validat
     Returns:
         Dictionary with overall and per-dataset metrics
     """
-    from collections import defaultdict
-
     # Get predictions
     predictions = trainer.predict(dataset_split)
 
-    # Decode predictions and labels
-    pred_ids = predictions.predictions
-    label_ids = predictions.label_ids
-    label_ids[label_ids == -100] = processor.tokenizer.pad_token_id
-
-    labels_str = processor.batch_decode(label_ids, skip_special_tokens=True)
-    preds_str = processor.batch_decode(pred_ids, skip_special_tokens=True)
-
-    # Get dataset labels
-    dataset_labels = dataset_split["dataset"]
-
-    # Group by dataset
-    dataset_groups = defaultdict(lambda: {"predictions": [], "references": []})
-
-    for pred, label, ds_name in zip(preds_str, labels_str, dataset_labels):
-        dataset_groups[ds_name]["predictions"].append(pred)
-        dataset_groups[ds_name]["references"].append(label)
-
-    # Compute metrics for each dataset
-    results = {
-        "overall": similarity_metrics.calculate_batch(labels_str, preds_str),
-        "by_dataset": {},
-    }
-
-    # Per-dataset metrics
-    for ds_name, data in dataset_groups.items():
-        refs = data["references"]
-        preds = data["predictions"]
-
-        results["by_dataset"][ds_name] = similarity_metrics.calculate_batch(refs, preds)
-
+    results = evaluate_by_dataset(predictions, processor, dataset_split)
     print_evaluation_results(results, dataset_name.upper(), group_by_dataset=True)
 
     return results
