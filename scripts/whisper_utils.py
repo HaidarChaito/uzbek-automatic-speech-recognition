@@ -223,7 +223,9 @@ def print_evaluation_results(
     print("=" * 80 + "\n")
 
 
-def evaluate_by_dataset(predictions, processor, dataset_split):
+def evaluate_by_dataset(
+    predictions, processor, dataset_split, should_always_normalize_apostrophes=False
+):
     """
     Evaluate model predictions with per-dataset metric breakdown.
 
@@ -231,6 +233,8 @@ def evaluate_by_dataset(predictions, processor, dataset_split):
         predictions: PredictionOutput from trainer.predict() containing predictions and label_ids
         processor: WhisperProcessor for decoding token IDs to text
         dataset_split: Dataset with 'dataset' column for grouping metrics
+        should_always_normalize_apostrophes: Whether to normalize uzbek apostrophes even calculating raw metrics
+            It's only used when comparing with other models
 
     Returns:
         Dict with overall metrics and per-dataset breakdown:
@@ -265,7 +269,9 @@ def evaluate_by_dataset(predictions, processor, dataset_split):
 
     # Compute metrics for each dataset
     results = {
-        **similarity_metrics.calculate_batch(labels_str, preds_str),
+        **similarity_metrics.calculate_batch(
+            labels_str, preds_str, should_always_normalize_apostrophes
+        ),
         "by_dataset": {},
     }
 
@@ -280,7 +286,11 @@ def evaluate_by_dataset(predictions, processor, dataset_split):
 
 
 def evaluate_by_dataset_with_trainer(
-    trainer, processor, dataset_split, dataset_name="validation"
+    trainer,
+    processor,
+    dataset_split,
+    dataset_name="validation",
+    should_always_normalize_apostrophes=False,
 ):
     """
     Evaluate model and group results by dataset.
@@ -290,6 +300,8 @@ def evaluate_by_dataset_with_trainer(
         processor: Model processor
         dataset_split: Dataset split to evaluate
         dataset_name: Dataset name (VALIDATION or TEST)
+        should_always_normalize_apostrophes: Whether to normalize uzbek apostrophes even calculating raw metrics
+            It's only used when comparing with other models
 
     Returns:
         Dictionary with overall and per-dataset metrics
@@ -297,7 +309,9 @@ def evaluate_by_dataset_with_trainer(
     # Get predictions
     predictions = trainer.predict(dataset_split)
 
-    results = evaluate_by_dataset(predictions, processor, dataset_split)
+    results = evaluate_by_dataset(
+        predictions, processor, dataset_split, should_always_normalize_apostrophes
+    )
     print_evaluation_results(results, dataset_name.upper(), group_by_dataset=True)
 
     return results

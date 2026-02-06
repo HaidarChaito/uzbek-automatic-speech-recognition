@@ -5,7 +5,7 @@ from typing import Dict
 
 import jiwer
 
-from scripts.uzbek_text_normalizer import normalize_text
+from scripts.uzbek_text_normalizer import normalize_text, normalize_uzbek_apostrophes
 
 
 class NormalizationLevel(Enum):
@@ -87,6 +87,7 @@ def calculate(
 def calculate_batch(
     references: list[str],
     hypotheses: list[str],
+    should_always_normalize_apostrophes=False,
 ) -> dict[str, float]:
     """
     Calculate corpus-level (macro-averaged) ASR metrics.
@@ -94,6 +95,8 @@ def calculate_batch(
     Args:
         references: List of ground truth transcriptions
         hypotheses: List of predicted transcriptions
+        should_always_normalize_apostrophes: Whether to normalize uzbek apostrophes even calculating raw metrics
+            It's only used when comparing with other models
 
     Returns:
         Dict with WER, CER, and sequence similarity (both normalized and raw)
@@ -116,6 +119,11 @@ def calculate_batch(
     sequence_similarity = compute_corpus_sequence_similarity(
         refs_normalized, hyps_normalized
     )
+
+    # It's only used when comparing with other models
+    if should_always_normalize_apostrophes:
+        references = [normalize_uzbek_apostrophes(ref) for ref in references]
+        hypotheses = [normalize_uzbek_apostrophes(hyp) for hyp in hypotheses]
 
     # Raw [with punctuation, casing and numbers as digit] corpus-level metrics
     wer_raw = jiwer.wer(references, hypotheses)
