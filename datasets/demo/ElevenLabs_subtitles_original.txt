@@ -1,0 +1,239 @@
+00:00:01,260 --> 00:00:25,340 [Speaker 0]
+Assalomu alaykum hammaga. Mening ismim Murodilloh Kamilov. Tosha universitetining AI Engineering fakulteti magistratura talabasiman. Ushbu videoda uch yarim to'rt oy mobaynida ustida ishlab kelayotgan loyihani natijalarini ko'rsatmoqchi edim. Ushbu loyiha aynan o'zbek ovozini o'zbek tekstiga o'tkazib berish uchun xizmat qiladi. Ya'ni ingliz tilida aytganda transkript. 
+
+00:00:27,460 --> 00:00:52,670 [Speaker 0]
+Slaydlar ingliz tilida. Chunki aynan shu slaydlardan deyarli shu slaydlardan foydalanib professorlarimizga loyihani ko'rsatib bergan edik. Keyin slaydlarni ingliz tiliga o'tazib chiqish uchun ozgincha urindim. O'zbek tiliga o'tazib chiqish uchun urindim ozgincha. Shuning uchun slaydlar ingliz tilida, lekin o'zim o'zbek tilida ko'rsatib chiqaman. Keyinchalik aynan pastda ko'rib turgan yozuvlar 
+
+00:00:54,800 --> 00:00:55,280 [Speaker 0]
+bu 
+
+00:00:56,420 --> 00:01:17,200 [Speaker 0]
+ushbu modeldan foydalanib transkript qilingan. Keyin oxirida xato qanchalik xato darajada ishlayotganini ko'rib chiqishingiz mumkin. E'tibor berishinglarni hohlardim. Ya'ni meni ovozim bu modelni o'rgatishda hech qachon ishlatilmagan va o'zi savol tug'ilishi mumkin. 
+
+00:01:18,220 --> 00:01:32,580 [Speaker 0]
+Speech to text modellarini qayerda ishlatiladi o'zi nimaga kerak degan savol bo'lishi mumkin. Birinchi xayolga kelgan narsa bu aksessibiliti, ya'ni kar yoki quloqi yaxshi eshitmaydigan insonlarni 
+
+00:01:34,760 --> 00:01:40,300 [Speaker 0]
+video yoki boshqa bir audiolarni eshitayotganlarida pastida 
+
+00:01:41,540 --> 00:01:50,540 [Speaker 0]
+transkript qilib, ya'ni yozuvni nima aytilayotganini yozuvini yozib borish imkoniyati bo'ladi. Aynan ular eshitmaganligi sababli yaxshi eshitmaganligi sababli 
+
+00:01:51,700 --> 00:01:57,870 [Speaker 0]
+pastdagi yozuvni o'qib turib tushunish imkoniyati ega bo'lishlari mumkin. Yoki har xil 
+
+00:01:59,080 --> 00:02:05,140 [Speaker 0]
+nima deydi smart homelarda voice komandalari uchun ishlatilishi mumkin. Chiroqni o'chir, chiroqni yoq. 
+
+00:02:07,120 --> 00:02:13,500 [Speaker 0]
+Shunaqa vazifalar bajarish imkoniyati bo'ladi. Yana real time translation bu 
+
+00:02:14,540 --> 00:02:19,200 [Speaker 0]
+misol uchun Google Translate ham ochgan bo'lsanglar o'sha yerda aynan ovoz orqali 
+
+00:02:20,620 --> 00:02:40,440 [Speaker 0]
+kiritish imkoniyati bor. Tekstni ya'ni ovozini yoqib turasizlar. Buyerdan ichkarida o'sha Google o'zining modelini ishlatib turib speech to text modelini ishlatib turib, sizga gapirgan ovozini tekst ko'rinishiga o'tkazadi va u tekst ko'rinishini keyin tarjima qiladi. Shunaqa yo'llarda ishlatish imkoniyati bo'ladi. Va 
+
+00:02:41,500 --> 00:02:44,560 [Speaker 0]
+yana xayolimga kelgani bu aynan shunaqa Zoom meeting yoki 
+
+00:02:45,680 --> 00:03:00,300 [Speaker 0]
+darslarda audio qilib yozib olasiz va keyinchalik misol uchun uyga borganingizda yoki boshqa meeting bo'lsa, o'sha yozib olgan videongiz orqali notlar yoki umuman hamma 
+
+00:03:01,700 --> 00:03:29,280 [Speaker 0]
+ichidagi ma'lumotlarni tekst ko'rinishiga o'tkazish imkoniyati bo'ladi. Keyinchalik bu balki muhim nuqtalarni imtihonga tayyorlanayotganda boshqa bo'layotganda ishlatish imkoniyati bo'ladi. Yoki yana har xil media monitoring yo'llari ham bor. Qisqasi, o'ylaymanki, bu kabi modellarini ishlatish bilish imkoniyatlari ko'p deb o'ylayman. 
+
+00:03:31,180 --> 00:03:45,540 [Speaker 0]
+Ushbu loyiha ustida ishlayotganimda ko'p muammolarni kuzatdim. Bulardan asosiylardan bittasi o'ttiz to'rt million aholi aynan o'zbek tilida birinchi til sifatida ishlatadi. Statistikaga qaraganda va 
+
+00:03:47,140 --> 00:03:49,700 [Speaker 0]
+bu til aynan AI sohasida 
+
+00:03:51,000 --> 00:03:51,380 [Speaker 0]
+juda 
+
+00:03:52,860 --> 00:03:55,340 [Speaker 0]
+sayoz resursga ega til hisoblanadi. 
+
+00:03:56,420 --> 00:04:01,800 [Speaker 0]
+Bu gapimga bir yaxshi misol sifatida aynan Whisper Open AI Whisper modeli 
+
+00:04:03,540 --> 00:04:17,220 [Speaker 0]
+bor-yo'g'i o'zbek tilida o'n sakkiz minutgina audio data bilan audio data ishlatilib o'rgatilgandi va natija albatta juda yomon. Bir yuz o'n olti foiz word error rate. Unaqa ko'ramiz word error rate nimaligini. 
+
+00:04:18,480 --> 00:04:26,780 [Speaker 0]
+Solishtirish shunchaki solishtirish sifatida turk tili to'rt ming uch yuz soat audio data ishlatilgan va 
+
+00:04:28,160 --> 00:04:48,020 [Speaker 0]
+taxminan o'n olti foiz word error rate natijasiga erishilgan. Yana solishtirish jihatidan nemis tili o'n uch ming soat audio data ishlatilgan. Aynan Whisper small modelini qurish davomida o'n uch ming soat va misol uchun to'rt ming uch yuz soat audio oldida o'n sakkiz minut bu albatta hech narsa emas. 
+
+00:04:49,260 --> 00:04:52,800 [Speaker 0]
+Yana keyingi kuzatgan muammolarimdan asosiylardan bittasi bu 
+
+00:04:53,840 --> 00:05:14,680 [Speaker 0]
+o'zbek tilida read speech datasetlar ko'pligi va conversational spontaneous speechlar kamligi. Hozir tushuntiraman. Ya'ni read speech deganda bu kimgadir tekst beriladi. O'sha tekstni keyin o'sha odam o'qib beradi. O'qib berilgan audio yozib olingan. O'qib berilgan audioni keyin o'sha datasetga qo'shiladi. 
+
+00:05:15,840 --> 00:05:32,000 [Speaker 0]
+Lekin bundagi datasetlar yaxshi, yaxshi, lekin ko'p odam ishla- ko'p odam qatnashishi mumkin. Har xil dialektlarni ko'rsa bo'ladi. Lekin muammolardan bittasi odatda yozilgandan keyin odatda adabiy tilda yoziladi, formal bo'ladi 
+
+00:05:34,460 --> 00:05:39,610 [Speaker 0]
+va o'qiyotganda inson misol uchun kamroq xato qiladida. Yoki to'xtab qolishi, pauza qilishi, 
+
+00:05:40,780 --> 00:05:45,160 [Speaker 0]
+boshqa tillarni qo'shib borishi, o'z gapini qaytarishi kabi 
+
+00:05:46,980 --> 00:06:00,756 [Speaker 0]
+muammolar bo'lmaydi. Lekin conversational spontaneous speech misol uchun intervyulardan, podkastlardan har xil joylardan odam haqiqatda ozakki gapirayotganda bu narsa 
+
+00:06:00,756 --> 00:06:16,276 [Speaker 0]
+Yaqol farq qiladida. Shu kabi datasetlar kam, lekin read speech datasetlar ko'p. Yeterlidir deb hisoblayman. Va yana kuzatgan muammolarimdan bittasi bu bor-yo'g'i beshtagina ochiq modullarni ko'rdim, qaysiki yaxshi bir 
+
+00:06:17,436 --> 00:06:25,496 [Speaker 0]
+natija ko'rsatgan va ularning deyarli barchasi shu beshta modullarning deyarli barchasi adashmasam, uch-to'rttasi chiqarayotganda, 
+
+00:06:27,496 --> 00:06:28,176 [Speaker 0]
+textda 
+
+00:06:29,536 --> 00:06:35,316 [Speaker 0]
+taxmin qilinayotganda hamma textda kichkina harflarda yozilgan, lekin nima deydi, 
+
+00:06:36,496 --> 00:07:39,936 [Speaker 0]
+tanish belgilari bor. Misol uchun tutquch belgisi, nuqta, vergul. U kabi tanish belgilari bor. Lekin agar textda kichik harflarda faqat kichik harflarda yozilsa, uni o'qish ham qiyin-da. Ko'pincha noqulaylik tug'dirishi mumkin, to'g'ri, lekin bu muammoni oddiygina script Python script bilan hal qilish mumkin. Lekin afsuski, shunaqa muammolarni kuzatdim-da. Mana bu yerda word error rate nimaligi. Sizda mana ikkita text bor. Biri sizning modelingiz taxmin qilgan text va ikkinchisi reference text, ya'ni o'zi haqiqatda to'g'ri bo'lgan text. Ikkalasini bir-biriga solishtirayotganda so'zlarni o'zgargan so'zlari, misol uchun taxmin qilayotganda ba'zi so'zlarni o'zgartirib yozgan bo'lishi mumkin. Hato, imloiy xato qilib misol uchun. Yoki ba'zi so'zlarni o'chirib tashlagan bo'lishi mumkin. Yoki ba'zi so'zlarni o'zidan model o'zidan o'zi shunaqa eshitildi deb o'ylab qo'shyvergan bo'lishi mumkin. Aynan shu 
+
+00:07:40,956 --> 00:07:44,176 [Speaker 0]
+so'zlarning sonini hammasini qo'shamiz. Ularni bo'lamiz. 
+
+00:07:45,336 --> 00:07:55,616 [Speaker 0]
+Siz to'g'ri deb bilgan textning so'zlar soniga. Shunda word error rate kelib chiqadi. Shuning uchun ham misol uchun bir to'rt olti foiz chiqishining sababi ham balki model o'zidan o'zi ko'p 
+
+00:07:58,116 --> 00:07:59,636 [Speaker 0]
+so'zlarni qo'shgan bo'lishi mumkin. 
+
+00:08:01,356 --> 00:08:15,896 [Speaker 0]
+Loyihaning eng asosiy maqsadlaridan o'zi boshlaganimiz sababi AI sohasida bir amaliy, bir kattaroq bir amaliy ish qilib ko'rish va bu ish davomida yangi narsalar o'rganish edi. Undan tashqari, 
+
+00:08:17,336 --> 00:08:28,536 [Speaker 0]
+ya'ni qo'l kelganicha yaxshiroq bir o'zbek shu automatic speech recognition yoki speech to text modulini yaratish edi. Va 
+
+00:08:29,756 --> 00:08:42,676 [Speaker 0]
+umid qildimki, ya'ni bu narsani open source qilib, ya'ni ochiq qilib ko'rsatib, kim ishlatmoqchi bo'lsa, bemalol ishlatish imkoniyatiga ega bo'lsindi deb niyat qilgandim. Va undan tashqari kichikroq modulni 
+
+00:08:44,356 --> 00:09:31,136 [Speaker 0]
+tuzib, undan kerak bo'lsa, oddiy odam kompyuterini oddiy protsessorida ham ishlatola olish qobiliyati bo'lishini niyat qilgandim. Bu loyihaga eng kerak bo'ladigan narsa, albatta, bu data edi. Ochiq bo'lgan datasetlarni qidirib ko'rsam, aynan shu oltita dataset kelib chiqdi. Yana bitta dataset bor edi, Googlening Fluence dataseti, lekin bu datasetdan bayaqi foydalanmadim ham, bayaqiga ham qo'shmadim, chunki o'zbek tili uchun juda bir kam ma'lumot bor edi u yerda. Shularni o'zi oltita datasetning o'zini hammasini qo'shadigan bo'lsak, taxminan bir ming yetti yuz ellik soat data bor ekan, aynan o'zbek tili uchun. Bu 
+
+00:09:32,476 --> 00:09:53,266 [Speaker 0]
+qaysidir ma'noda kam bo'lishi mumkin, chunki mana hozir aytaman. To'rtta data, tepada ko'rib turgan to'rtta datasetlar aynan read speech bo'yicha. Read speech deganda shu boya aytganimdek, insonlarga shu text bergan, textni o'qib berishgan. O'sha aynan o'sha audiosidan foydalanib dataset qurishgandi. Aytganimdek, bu dataset read speechda insonlar ko'p, 
+
+00:09:54,276 --> 00:09:55,356 [Speaker 0]
+ko'pam xato qilmaydi. 
+
+00:09:56,976 --> 00:09:59,986 [Speaker 0]
+Qayta misol uchun o'zini qaytarmaydi. Tutilishlar yo'q. 
+
+00:10:01,156 --> 00:10:07,476 [Speaker 0]
+Boshqa tilga o'tib ketish yo'q. Misol uchun rus tilidan bir-ikkita so'zlarni qo'shib, ingliz tilidan so'zni qo'shish yo'q. 
+
+00:10:09,656 --> 00:10:39,476 [Speaker 0]
+Va odatda formal yozilgan bo'ladi. Yozilgandan keyin adabiy tilda o'qilinadi odatda. Shu kabi muammoli asosiysi shu read speechda bor, lekin ular ham umuman foydalanish kerak emas degan emas, albatta. Shu datasetlar bor to'rttasi. Read speech bo'yicha yana ikkitasi pastdagi ikkitasi conversational, ya'ni haqiqiy og'zaki nutqni ko'rsatib beradigan ikkita dataset bor. Ya'ni shu podkastlarda olingan, intervyularda olingan, har xil 
+
+00:10:40,756 --> 00:10:49,476 [Speaker 0]
+YouTube videolarda olingan. Shu bu haqiqiy o'sha nutqni ko'rsatib bera oladigan datasetlar, lekin muammosi Gemini ikki yarim Pro orqali 
+
+00:10:51,836 --> 00:11:20,956 [Speaker 0]
+textni generatsiya qilingan. Bu albatta yomon tarafi Gemini ikki yarim Pro ham o'zini xato, xato qilib transkribe qilyapti aynan o'zbek tilida. Bu o'zbek tilidagi qilgan xatolarini keyin modulda ishlatadigan bo'lsak, model ham aynan shu xatolarini o'rganib qolishi mumkinda. Shu kabi muammolar bor. Umuman olganda har bitta datasetning yaxshi va yomon taraflari bor. Shu yerda ko'rib chiqishlari mumkin. Yana e'tibor berishinglar mumkin, e'tibor berishinglarni xohlagan bo'lardim. Aynan 
+
+00:11:22,356 --> 00:11:58,716 [Speaker 0]
+read speech datasetlarimizning ham sakson foizi taxminan, umumiy qilib olganda taxmin, taxminan sakson foizi tekshirilmagandi. Tekshirilgan deganda odatda kamida ikkita to'g'ri deb kimdir hisoblaydi. Uni odamlar yozib chiqqandan keyin uni boshqa odamlar tekshiradi. Text bilan audio yozilgan text, audio bir-biriga mos kelayotdimi, qanaqaga o'qilayotganini xato qilmadimi degandek tekshiriladi. Aynan tekshirilganda taxminan eng kamida ikkita tekshirilgan ovoz bo'lishi kerak. To'g'ri deb bergan va to'g'ri deb bergani 
+
+00:12:00,196 --> 00:12:04,128 [Speaker 0]
+noto'g'ri deb berganidan ko'p bo'lishi kerak. 
+
+00:12:04,128 --> 00:12:15,948 [Speaker 0]
+Albatta, ikkitagina ovoz bu juda kam. Shunda ham sakson foizimiz sakson foiz data tekshirilmaganda. Xo'p. Yana 
+
+00:12:17,888 --> 00:12:30,148 [Speaker 0]
+bu datasetlarni eng ishlatilmagani men ishlatmaganim, ishlatmaslikka qaror qilganim bu o'zbek speech korpusi. Chunki o'tta e'tibor bergan bo'lsangiz, mana hamma tekstlar 
+
+00:12:31,888 --> 00:12:34,268 [Speaker 0]
+kichkina harf bilan yozilgan va, 
+
+00:12:35,567 --> 00:12:56,268 [Speaker 0]
+va tinish belgilari umuman yo'q. Men, men maqsadim aynan tinish belgili. O'sha katta harflarni katta kichikligi e'tibor beradigan modullar tuzmoqchi edim. Shunday model tuzish uchun datangiz ham shunday model bo'lish kerakda. Shunday tekstda bo'lish kerakda. 
+
+00:12:58,368 --> 00:13:01,208 [Speaker 0]
+Keyingi qadam bu data preprocessing audio uchun edi. 
+
+00:13:02,508 --> 00:13:11,928 [Speaker 0]
+Ya'ni audioni model tezroq o'rgana olishi uchun yordam berish uchun audiolarni muvofiqlashtirish misol uchun 
+
+00:13:13,908 --> 00:13:36,427 [Speaker 0]
+sampling rate bir xil bo'lishi yoki har xil background sho'qin juda misol uchun katta background sho'qinlarni kesish yoki uzoq bo'lgan pavzalarni yo'qotish. Misol uchun bir uch sekundda uzoq pavza bo'lsa, o'shani qisqartirish yoki audioni 
+
+00:13:38,208 --> 00:13:44,708 [Speaker 0]
+ovoz darajasini juda baland bo'lsa pasaytirish, juda past bo'lsa sal ko'tarish. Shunaqangi 
+
+00:13:45,968 --> 00:13:50,008 [Speaker 0]
+sodda bir muvofiqlashtirishlar, audio muvofiqlashtirishlarni ishlatdim. 
+
+00:13:51,488 --> 00:14:51,348 [Speaker 0]
+Keyingi muvofiqlashtirgan narsa bu albatta tekst. Chunki aytganidek datasetlarda audio bor va unga muvofiq bo'lgan tekst bor. O'sha tekst audioni endi to'g'riladik, muvofiqlashtirdik qulayliguncha. Endi tekstni. Tekstni muvofiqlashtirish. O'sha mana shunaqa qilgan barcha qadamlarimni ko'rsanglar bo'ladi. Men uchun eng muhim e'tibor beradiganinglar. Masalan mana o'sha o'zbek tilidagi apostroflarni to'g'rilash. Misol uchun datasetda juda har xil apostroflar ishlatilgan. Bittasi bunaqa, bittasi bunaqa. Har xil har xilligini oldini olish uchun bittagina soddagina apostrof oddiy umuman apostrof ishlatdim. Chunki o'sha model o'sha sodda oddiyligini o'rganib olib, keyin misol uchun qayta oxirida natija chiqqandan keyin uni oddiygina Python skript bilan to'g'ri o'zingiz xohlagan ko'rinishda o'zingiz xohlagan formatga o'tkazib olishingiz oson. Chunki misol uchun 
+
+00:14:52,388 --> 00:15:14,008 [Speaker 0]
+O va G harflaridan keyin agar tutqich belgisi kelsa, demak bu O ni bildiryotgan bo'ladi. Yoki G dan keyin apostrof kelayotgan bo'lsa, demak bu G'ni bildiradi. U o'tta o'zingiz xohlagan bir formatdagi apostrof ishlatib olishingiz mumkin. Demak, O bilan G bo'lmasa, demak bu haqiqiy tutqich belgisi bo'lyapti. Misol uchun ne'mat so'zidagi tutqich belgisi. 
+
+00:15:15,228 --> 00:15:34,168 [Speaker 0]
+Uni o'zingiz xohlagan formatda o'tkazib olishingiz mumkin. Bu oddiygina Python skript bilan to'g'rilasa bo'ladi, deb o'ylayman. Undan tashqari, boya ko'rgan edinglar Feruza speech ham aslida shu paperini o'qib ko'rganimda kirillik tekstdan foydalanilgan, kirillik tekstni o'qilgan, keyinchalik latin tekst ham qo'shilgan. U har xil onlayn toollar orqali 
+
+00:15:35,868 --> 00:15:41,088 [Speaker 0]
+kirill tekstni o'zbek kirill tekstini o'zbek latin tekstiga o'tkazilgan. Lekin afsuski, 
+
+00:15:42,188 --> 00:15:42,508 [Speaker 0]
+juda 
+
+00:15:43,568 --> 00:15:58,688 [Speaker 0]
+ko'p xatoliklarga yo'l qo'yilgan latin tekstiga o'tkazilayotganda. Shuning uchun o'zim majbur bo'lib shu Feruza speechni ishlatishim uchun kirillik kirill tekstini latin tekstiga o'tkazadigan bir soddaroq Python skript yozishga to'g'ri keldi. 
+
+00:15:59,988 --> 00:16:12,508 [Speaker 0]
+Xo'p, ushbu slaydda men tutgan yo'lni ko'rishinglar mumkin. Umumiy yo'lni. Asosiy model sifatida Whisper Small modelini tanladim. Nimaga noldan turib 
+
+00:16:13,908 --> 00:16:43,388 [Speaker 0]
+boshidan modelni o'rgatmadim? Chunki bu narsaga juda ko'proq data kerak bo'ladi. Aynan Whisper modeli umuman Whisper modelini fine tune qilish, ya'ni uni o'zbek tiliga moslashtirish ancha osonroq. Chunki Whisper modeli o'zi ko'pgina datani ko'rgan, o'zi tushunadi. Misol uchun boshqa tillardagi o'xshashliklar bor. Misol uchun turk tili bilan o'zbek tili o'xshashlik taraflari bor yoki yoki umuman misol uchun 
+
+00:16:45,548 --> 00:17:33,618 [Speaker 0]
+har xil ovoz variantlari borligi, qiz bolaning ovozi boshqacha, o'g'il bolaning ovozi boshqachaligi yoki sal ton tushganda, sal ton ko'tarilganda har xil tinish belgilari qo'yilishini umumiy jihatdan til nimaligini, tilni tushunish jihatidan biladi Whisper. Chunki uni juda katta data bilan o'rgatilgan. Shunchaki men o'zbek tiliga moslashtirsam bo'ldi. Uni noldan boshlasam, juda ko'p data kerak bo'ladi shu darajaga chiqib olishi uchun. Shuning uchun bor modelni shunchaki o'zbek tiliga moslashtirishni to'g'ri deb bildim. Keyin universitetga rahmat. Juda yaxshi bir kuchli GPUlar berishdi. Juda yaxshi serverlar berishdi. Maza qilib eksperiment qilishga imkoniyat bo'ldi. Undan tashqari, 
+
+00:17:35,268 --> 00:17:41,148 [Speaker 0]
+datani sifatini ko'proq urg'u berdim. Qaytanga datani 
+
+00:17:43,568 --> 00:17:58,608 [Speaker 0]
+nima deydi salmog'i jihatidan ko'ra. Shuning uchun aytganimdek, boyagi sakson foiz datamiz nima deydi tekshirilmagan datada. O'sha tekshirilmagan, o'zi tekshirilgan datada ham o'zi xatoliklarni sezdim. Shuning uchun, 
+
+00:18:00,308 --> 00:18:14,356 [Speaker 0]
+shuning uchun Google Speech-to-Text modelini yoki Gemini 2.5 Pro modellarini ishlatib turib audioni berdim. Shu tekstni taxmin qiladi. Bergan, taxmin qilgan tekstini bu yoqda to'g'ri deb dataset ichida to'g'ri deb 
+
+00:18:15,556 --> 00:18:43,566 [Speaker 0]
+ko'rsatilgan tekstga solishtiraman. Agar ikkalasi bir-biriga mos kelib turgan bo'lsa, demak, buni bemalol ishlatsa bo'ladi. Haqiqatda berilgan datasetdagi audio bilan tekst to'g'ri ekan. Chunki mana boshqa model ham shunaqa to'g'ri deb tasdiqlayapti deb bemalol qo'rqmasdan ishlatishsa bo'ladi, deb o'yladim. Shunaqa filtr qilib oldim va undan tashqari ikkita stage ikkita qadam bilan modelni o'rgatishga qaror qildim. Bittasi 
+
+00:18:46,376 --> 00:18:55,036 [Speaker 0]
+datada xatoliklar bo'lishi mumkin. Misol uchun, conversational shunaqa haqiqiy ozodki newsdan IT datasetlardan olingan 
+
+00:18:57,376 --> 00:19:00,756 [Speaker 0]
+audio datalarni ichida xatoliklar bo'lishi mumkin, chunki 
+
+00:19:01,976 --> 00:20:13,415 [Speaker 0]
+Google ham taxminan shu narsa bo'lsa kerak, deyapti. Gemini o'zlariga Gemini bergan proda ham shunday ma'lumotlar bor. Ichida muvofiqlik juda yuqori bo'lmasligi mumkin. Bir-biriga muvofiqligi juda yuqori bo'lmasa ham ishlatib turadi. Misol uchun, yigirma foizdan kam bo'lsa, bu mayli ishlatib turadi, degandek qaror qabul qildim. Ya'ni maqsad ko'proq datani ko'rib olish boshida mayli xato-kamchiliklar bo'lsa ham. Keyin ikkinchida augmentation yo'q, ya'ni audioni har xil ko'rinishda o'zgartirish, misol uchun, tonini o'zgartirish, ozgincha yoki tezligini tezlashtirish yoki sekinlashtirish. Shunaqayagi augmentationlar yo'q bo'lmadi birinchisida. Ikkinchi qadamda keyin endi tozarroq datani berishni boshladim. Misol uchun, olti foizdan kam bo'lgan datani ishlatibkin va unda ham ishlatganda augmentation, ya'ni oldinga ko'rgan datam bo'lsa, o'sha oldinga ko'rgan to'g'ri datamni augment qildim, ya'ni o'zgartirdim. Shunaqa tezligini ozgincha tezlashtirdim. Bir, bir xil tezlikda berib ko'rdim. Misol uchun, nol to'qqiz tezlikda berib ko'rdim. Tonini o'zgartirib ko'rdim. Har xil augmentationlarni ishlatdim ikkinchi qadamda. 
+
+00:20:14,756 --> 00:20:15,076 [Speaker 0]
+Endi 
+
+00:20:16,495 --> 00:20:46,596 [Speaker 0]
+eng muhimi validation va test setlarimda aytganimdek conversational haqiqiy OzODK IT va news datasetlari haqiqiy OzODK datasetlar va ular Gemini 2 Prodan foydalanib tekstini tuzilgandi. Lekin validation va test setlarim uchun alohida o'zim qo'l qo'lda tekshirib chiqdim. Haqiqiy to'g'rimi, noto'g'rimi? O'sha aynan 
+
+00:20:47,616 --> 00:21:05,206 [Speaker 0]
+qo'lda tekshirib chiqqanimni keyin validation va test setlarda ishlatdim. Haqiqiy bir modelimni natijasini ko'rish uchun. Endi tekshirayotganda, albatta, sub'ektiv bo'lishi mumkin. Ba'zi joylarda o'zi shu narsa to'g'ri deb bilgan bo'lishi mumkin. Aslida, nima deydi model 
+
+00:21:06,616 --> 00:21:12,646 [Speaker 0]
+boshqacha narsani ham to'g'ri sifatida kim boshqani fikrida boshqa narsa ham to'g'ri bo'lishi mumkin. Misol uchun, 
+
+00:21:14,876 --> 00:21:27,376 [Speaker 0]
+shevada gapirilgan narsani haqiqiy shevada Google Gemini shevada yozayapti. Misol uchun, "man" degan "man" yozayapti, lekin "man" "men" deb yozishga qaraayapti. Shunaqa har xil sub'ektiv fikrlar aralashgan bo'lishi mumkin.
